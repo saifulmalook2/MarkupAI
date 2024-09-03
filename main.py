@@ -54,13 +54,14 @@ class ProjectManagmentUpload(BaseModel):
 
 @app.post("/project-management/analyze-upload")
 async def project_management_upload(data: ProjectManagmentUpload):
-    data_doc = jsonable_encoder(data)
-    rfe = data_doc['auditor_rfe']
-    name = data_doc['name']
-    uid = data_doc['uid']
-    markup = data_doc['markup']
+    # data_doc = jsonable_encoder(data)
+    # rfe = data_doc['auditor_rfe']
+    # name = data_doc['name']
+    # uid = data_doc['uid']
+    # markup = data_doc['markup']
 
-    response = await generate_response(uid, name, rfe, markup)
-    return response
+    # response = await generate_response(uid, name, rfe, markup)
+    # return response
+    return "hello"
     
 
