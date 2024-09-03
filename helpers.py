@@ -36,14 +36,14 @@ def upload_to_space(origin, output,format, region_name='nyc3'):
     client = boto3.client(
         's3',
         region_name=region_name,
-        endpoint_url=f'https://{region_name}.digitaloceanspaces.com',
+        endpoint_url=f'https://annotated-files.nyc3.digitaloceanspaces.com',
         aws_access_key_id=os.getenv("SPACES_ACCESS"),
         aws_secret_access_key=os.getenv("SPACES_SECRET")
     )
     
     try:
         client.upload_file(origin, "annotated-files", f"{output}.{format}")
-        public_url = f'https://annotated-files.{region_name}.digitaloceanspaces.com/{output}.{format},'
+        public_url = f'https://annotated-files.nyc3.digitaloceanspaces.com/{output}.{format},'
         return public_url
     
     except Exception as e:
