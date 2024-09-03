@@ -409,7 +409,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
         api_key=os.getenv("AZURE_SEARCH_KEY"),
         service_name="azure-vector-db",
         index_name="soc-index",
-        top_k=7,  # Number of documents to retrieve
+        top_k=5,  # Number of documents to retrieve
         filter=f"metadata/source eq '{persist_directory}'"
     )
     # Initialize Azure Chat model
