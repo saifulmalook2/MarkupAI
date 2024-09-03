@@ -279,9 +279,9 @@ async def load_data(folder_path: str):
                     raw_documents = UnstructuredImageLoader(file).load()
                     all_documents.extend(raw_documents)
 
-                os.makedirs("backup_docs", exist_ok=True)
+                os.makedirs("docs", exist_ok=True)
                 source_file = os.path.join("temp_docs", filename)
-                destination_file = os.path.join("backup_docs", filename)
+                destination_file = os.path.join("docs", filename)
                 
                 # Copy the file to the destination folder
                 shutil.copy(source_file, destination_file)
@@ -470,7 +470,7 @@ async def generate_response(uid, persist_directory, rfe):
 
     if "pdf" in source:
         await highlight_text_in_pdf(
-                                    f"./backup_docs/{source}",
+                                    f"./docs/{source}",
                                     "out.pdf",
                                     page_contents,
                                     )    
@@ -481,7 +481,7 @@ async def generate_response(uid, persist_directory, rfe):
 
     elif "xlsx" in source:
         await highlight_text_in_xlsx(
-                                    f"./backup_docs/{source}",
+                                    f"./docs/{source}",
                                     "out.xlsx", 
                                     page_contents
                                     )
@@ -491,7 +491,7 @@ async def generate_response(uid, persist_directory, rfe):
 
     elif "csv" in source:
         await highlight_text_in_csv(
-                                    f"./backup_docs/{source}",
+                                    f"./docs/{source}",
                                     "out.xlsx",
                                     page_contents
                                     )
@@ -501,7 +501,7 @@ async def generate_response(uid, persist_directory, rfe):
 
     elif "docx" in source:
         await highlight_text_in_docx(
-                                    f"./backup_docs/{source}",
+                                    f"./docs/{source}",
                                     "out.docx",
                                     page_contents
                                     )
