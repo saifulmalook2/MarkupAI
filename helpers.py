@@ -295,7 +295,7 @@ async def load_data(folder_path: str):
             if "id" not in text:
                 text.id = str(uuid.uuid4())
 
-            text.metadata["source"] = text.metadata["source"].split("\\")[-1]
+            text.metadata["source"] = text.metadata["source"].split("/")[-1]
 
             print(text)
             if "row" in text.metadata:
@@ -442,27 +442,27 @@ async def generate_response(uid, persist_directory, rfe):
 
     if "pdf" in source:
         await highlight_text_in_pdf(
-                                    f".\\docs\\{source}",
+                                    f"{source}",
                                     "Annotated_file.pdf",
                                     page_contents,
                                     )    
 
     elif "xlsx" in source:
         await highlight_text_in_xlsx(
-                                    f".\\docs\\{source}",
+                                    f"{source}",
                                     "new.xlsx", 
                                     page_contents
                                     )
 
     elif "csv" in source:
         await highlight_text_in_csv(
-                                    f".\\docs\\{source}",
+                                    f"{source}",
                                     "test.xlsx",
                                     page_contents
                                     )
     elif "docx" in source:
         await highlight_text_in_docx(
-                                    f".\\docs\\{source}",
+                                    f"{source}",
                                     "test.docx",
                                     page_contents
                                     )
