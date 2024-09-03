@@ -50,6 +50,7 @@ class ProjectManagmentUpload(BaseModel):
     uid :str
     auditor_rfe: str
     name : str
+    markup: bool
 
 @app.post("/project-management/analyze-upload")
 async def project_management_upload(data: ProjectManagmentUpload):
@@ -57,7 +58,9 @@ async def project_management_upload(data: ProjectManagmentUpload):
     rfe = data_doc['auditor_rfe']
     name = data_doc['name']
     uid = data_doc['uid']
-    response = await generate_response(uid, name, rfe)
+    markup = data_doc['markup']
+
+    response = await generate_response(uid, name, rfe, markup)
     return response
     
 

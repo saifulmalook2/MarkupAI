@@ -407,7 +407,7 @@ async def process_chat(chain, question, chat_history, dir):
     return final_response
 
 
-async def generate_response(uid, persist_directory, rfe):
+async def generate_response(uid, persist_directory, rfe, markup):
     chat_history.setdefault(uid, [])
 
 
@@ -469,39 +469,43 @@ async def generate_response(uid, persist_directory, rfe):
         
 
         pages.add(page)
+    
+    space_url = ""
 
-    if "pdf" in source:
-        await highlight_text_in_pdf(
-                                    f"./docs/{source}",
-                                    "out.pdf",
-                                    page_contents,
-                                    )    
+    if markup:
 
-        space_file_path = f"{uuid.uuid4()}.pdf"
-        space_url = upload_to_space("out.pdf", space_file_path)
-        print(space_url)
+        if "pdf" in source:
+            await highlight_text_in_pdf(
+                                        f"./docs/{source}",
+                                        "out.pdf",
+                                        page_contents,
+                                        )    
 
-    elif "xlsx" in source:
-        await highlight_text_in_xlsx(
-                                    f"./docs/{source}",
-                                    "out.xlsx", 
-                                    page_contents
-                                    )
-        space_file_path = f"{uuid.uuid4()}.xlsx"
-        space_url = upload_to_space("out.xlsx", space_file_path)
-        print(space_url)
+            space_file_path = f"{uuid.uuid4()}.pdf"
+            space_url = upload_to_space("out.pdf", space_file_path)
+            print(space_url)
 
-    elif "csv" in source:
-        await highlight_text_in_csv(
-                                    f"./docs/{source}",
-                                    "out.xlsx",
-                                    page_contents
-                                    )
-        space_file_path = f"{uuid.uuid4()}.xlsx"
-        space_url = upload_to_space("out.xlsx", space_file_path)
-        print(space_url)
+        elif "xlsx" in source:
+            await highlight_text_in_xlsx(
+                                        f"./docs/{source}",
+                                        "out.xlsx", 
+                                        page_contents
+                                        )
+            space_file_path = f"{uuid.uuid4()}.xlsx"
+            space_url = upload_to_space("out.xlsx", space_file_path)
+            print(space_url)
 
-    elif "docx" in source:
+        elif "csv" in source:
+            await highlight_text_in_csv(
+                                        f"./docs/{source}",
+                                        "out.xlsx",
+                                        page_contents
+                                        )
+            space_file_path = f"{uuid.uuid4()}.xlsx"
+            space_url = upload_to_space("out.xlsx", space_file_path)
+            print(space_url)
+
+        elif "docx" in source:
         await highlight_text_in_docx(
                                     f"./docs/{source}",
                                     "out.docx",
@@ -511,7 +515,6 @@ async def generate_response(uid, persist_directory, rfe):
         space_url = upload_to_space("out.docx", space_file_path)
         print(space_url)
     
-    print(pages)
     return {
         "AI_message": result["answer"].strip(),
         "Source": source,
