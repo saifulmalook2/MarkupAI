@@ -438,7 +438,7 @@ async def generate_response(uid, persist_directory, rfe):
     )
 
     source = persist_directory
-    pages, page_contents = [], {}
+    pages, page_contents = set(), {}
     for doc_details in result["context"]:
 
         lines = doc_details["page_content"].splitlines()
@@ -466,7 +466,7 @@ async def generate_response(uid, persist_directory, rfe):
         # page_contents.setdefault(page, lines)
         
 
-        pages.append(page)
+        pages.add(page)
 
     if "pdf" in source:
         await highlight_text_in_pdf(
@@ -508,11 +508,12 @@ async def generate_response(uid, persist_directory, rfe):
         space_file_path = f"{uuid.uuid4()}.docx"
         space_url = upload_to_space("out.docx", space_file_path)
         print(space_url)
-        
+    
+    print(pages)
     return {
         "AI_message": result["answer"].strip(),
         "Source": source,
-        "Pages" : set(pages),
+        "Pages" : pages,
         "Annotated_file" : space_url
         # pdf file will be returned as well after deployment
         }
