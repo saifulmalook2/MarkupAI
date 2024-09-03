@@ -77,15 +77,12 @@ async def highlight_text_in_pdf(input_path, output_path, page_contents):
 
             page = doc[page_num - 1]
             for l in text_list:
-                print(l)
-                print("list", anotated_texts)
                 if l.strip():
                     text_instances = page.search_for(l)
                     if text_instances:
                         for inst in text_instances:
                             if (
                                 inst not in anotated_rects
-                                and l not in anotated_texts
                             ):
                                 line_rect = get_line_rect(page, inst)
                                 if line_rect:
@@ -284,10 +281,7 @@ async def load_data(folder_path: str):
                 os.makedirs("docs", exist_ok=True)
                 source_file = os.path.join("temp_docs", filename)
                 destination_file = os.path.join("docs", filename)
-                
-                # Copy the file to the destination folder
                 shutil.copy(source_file, destination_file)
-
                 os.remove(file)
             except Exception as e:
                 print(f"Failed to process {filename}: {e}")
@@ -399,7 +393,7 @@ async def process_chat(chain, question, chat_history, dir):
         score = docs.metadata['@search.score']
         metadata_dict = docs.metadata["metadata"]
         # print(metadata_dict)
-        if score >= 3 and metadata_dict['source'] == dir:
+        if score >= 2 and metadata_dict['source'] == dir:
             print("matched")
             custom_data = {"metadata" : metadata_dict, "page_content" : docs.page_content}
             final_response['context'].append(custom_data)
