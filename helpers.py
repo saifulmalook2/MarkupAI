@@ -366,7 +366,7 @@ async def create_chain(retriever: AzureAISearchRetriever, model):
             ("human", "{input}"),
             (
                 "human",
-                "Given the above conversation and the {context}, generate a search query to look up in order to get information relevant to the conversation.",
+                "Given the above conversation and the knowledge base, generate a search query to look up in order to get information relevant to the conversation.",
             ),
         ]
     )
