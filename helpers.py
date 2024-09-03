@@ -473,7 +473,6 @@ async def generate_response(uid, persist_directory, rfe, markup):
     space_url = ""
 
     if markup:
-
         if "pdf" in source:
             await highlight_text_in_pdf(
                                         f"./docs/{source}",
@@ -506,15 +505,15 @@ async def generate_response(uid, persist_directory, rfe, markup):
             print(space_url)
 
         elif "docx" in source:
-        await highlight_text_in_docx(
-                                    f"./docs/{source}",
-                                    "out.docx",
-                                    page_contents
-                                    )
-        space_file_path = f"{uuid.uuid4()}.docx"
-        space_url = upload_to_space("out.docx", space_file_path)
-        print(space_url)
-    
+            await highlight_text_in_docx(
+                                        f"./docs/{source}",
+                                        "out.docx",
+                                        page_contents
+                                        )
+            space_file_path = f"{uuid.uuid4()}.docx"
+            space_url = upload_to_space("out.docx", space_file_path)
+            print(space_url)
+        
     return {
         "AI_message": result["answer"].strip(),
         "Source": source,
