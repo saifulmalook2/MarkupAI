@@ -28,6 +28,27 @@ from langchain.schema import Document
 from typing import List
 from langchain_community.retrievers import AzureAISearchRetriever
 from vector_db import AzureSearch
+import boto3
+
+
+def upload_to_space(origin, output,format, region_name='nyc3'):
+
+    client = boto3.client(
+        's3',
+        region_name=region_name,
+        endpoint_url=f'https://{region_name}.digitaloceanspaces.com',
+        aws_access_key_id=os.getenv("SPACES-ACCESS"),
+        aws_secret_access_key=os.getenv("SPACES-SECRET")
+    )
+    
+    try:
+        client.upload_file(origin, "annotated-files", f"{output}.{format}")
+        public_url = f'https://annotated-files.{region_name}.digitaloceanspaces.com/{output}.{format},'
+        return public_url
+    
+    except Exception as e:
+        print("error while placing file in bucket", e)
+        return None
 
 
 async def highlight_text_in_pdf(input_path, output_path, page_contents):
@@ -385,7 +406,7 @@ async def generate_response(uid, persist_directory, rfe):
         api_key=os.getenv("AZURE_SEARCH_KEY"),
         service_name="azure-vector-db",
         index_name="soc-index",
-        top_k=7,  # Number of documents to retrieve
+        top_k=3,  # Number of documents to retrieve
         filter=f"metadata/source eq '{persist_directory}'"
     )
     # Initialize Azure Chat model
@@ -443,27 +464,31 @@ async def generate_response(uid, persist_directory, rfe):
     if "pdf" in source:
         await highlight_text_in_pdf(
                                     f"{source}",
-                                    "Annotated_file.pdf",
+                                    "out.pdf",
                                     page_contents,
                                     )    
+
+        space_file_path = f"{uuid.uuid4()}.pdf"
+        space_url = upload_to_space("out.pdf", space_file_path, "pdf")
+        print(space_url)
 
     elif "xlsx" in source:
         await highlight_text_in_xlsx(
                                     f"{source}",
-                                    "new.xlsx", 
+                                    "out.xlsx", 
                                     page_contents
                                     )
 
     elif "csv" in source:
         await highlight_text_in_csv(
                                     f"{source}",
-                                    "test.xlsx",
+                                    "out.xlsx",
                                     page_contents
                                     )
     elif "docx" in source:
         await highlight_text_in_docx(
                                     f"{source}",
-                                    "test.docx",
+                                    "out.docx",
                                     page_contents
                                     )
         
