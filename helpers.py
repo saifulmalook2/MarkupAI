@@ -280,7 +280,7 @@ async def load_data(folder_path: str):
                     all_documents.extend(raw_documents)
 
 
-                shutil.copy(file, "backup_docs")
+                shutil.copy(file, "./backup_docs/")
                 os.remove(file)
             except Exception as e:
                 print(f"Failed to process {filename}: {e}")
