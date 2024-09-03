@@ -77,6 +77,8 @@ async def highlight_text_in_pdf(input_path, output_path, page_contents):
 
             page = doc[page_num - 1]
             for l in text_list:
+                print(l)
+                print("list", anotated_texts)
                 if l.strip():
                     text_instances = page.search_for(l)
                     if text_instances:
