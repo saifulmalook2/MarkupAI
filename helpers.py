@@ -442,27 +442,27 @@ async def generate_response(uid, persist_directory, rfe):
 
     if "pdf" in source:
         await highlight_text_in_pdf(
-                                    f".\documents\{source}",
+                                    f".\docs\{source}",
                                     "Annotated_file.pdf",
                                     page_contents,
                                     )    
 
     elif "xlsx" in source:
         await highlight_text_in_xlsx(
-                                    f".\documents\{source}",
+                                    f".\docs\{source}",
                                     "new.xlsx", 
                                     page_contents
                                     )
 
     elif "csv" in source:
         await highlight_text_in_csv(
-                                    f".\documents\{source}",
+                                    f".\docs\{source}",
                                     "test.xlsx",
                                     page_contents
                                     )
     elif "docx" in source:
         await highlight_text_in_docx(
-                                    f".\documents\{source}",
+                                    f".\docs\{source}",
                                     "test.docx",
                                     page_contents
                                     )
