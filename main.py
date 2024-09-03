@@ -28,7 +28,7 @@ class Upload(BaseModel):
 
 @app.post("/upload_files")
 async def upload_files(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
-    upload_folder = f"docs"
+    upload_folder = f"temp_docs"
     os.makedirs(upload_folder, exist_ok=True)
     
     filenames = []

@@ -31,7 +31,7 @@ from vector_db import AzureSearch
 import boto3
 
 
-def upload_to_space(origin, output,format, region_name='nyc3'):
+def upload_to_space(origin, output, region_name='nyc3'):
 
     client = boto3.client(
         's3',
@@ -44,6 +44,8 @@ def upload_to_space(origin, output,format, region_name='nyc3'):
     try:
         client.upload_file(origin, "annotated-files", f"{output}", ExtraArgs={'ACL': 'public-read'})
         public_url = f'https://annotated-files.nyc3.digitaloceanspaces.com/annotated-files/{output}'
+
+        os.remove(origin)
         return public_url
     
     except Exception as e:
@@ -255,13 +257,10 @@ async def load_data(folder_path: str):
                     raw_documents = PyPDFLoader(file, extract_images=True).load()
                     all_documents.extend(raw_documents)
 
+
                 elif file_extension == ".xlsx":
                     print("Loading")
                     raw_documents = await excel_loader(file)
-                    # raw_documents = UnstructuredExcelLoader(
-                    #     file, mode="single"
-                    # ).load()
-                    # print("loaded", raw_documents)
                     all_documents.extend(raw_documents)
 
                 elif file_extension == ".csv":
@@ -269,7 +268,6 @@ async def load_data(folder_path: str):
                     all_documents.extend(raw_documents)
 
                 elif file_extension == ".docx":
-                    # raw_documents = Docx2txtLoader(file).load()
                     raw_documents = await docx_loader(file)
                     all_documents.extend(raw_documents)
 
@@ -318,7 +316,7 @@ async def load_data(folder_path: str):
 
             text.metadata["source"] = text.metadata["source"].split("/")[-1]
 
-            print(text)
+
             if "row" in text.metadata:
                 text.metadata["page"] = text.metadata['row']
                 del text.metadata["row"]
@@ -326,6 +324,7 @@ async def load_data(folder_path: str):
             if "sheet" not in text.metadata:
                 text.metadata["sheet"] = ""
 
+        print(texts[0])
         await vectordb.aadd_documents(documents=texts)
 
         # index.upsert(vectors=zip(ids, vectors, metadatas), namespace="ai")
@@ -469,7 +468,7 @@ async def generate_response(uid, persist_directory, rfe):
                                     )    
 
         space_file_path = f"{uuid.uuid4()}.pdf"
-        space_url = upload_to_space("out.pdf", space_file_path, "pdf")
+        space_url = upload_to_space("out.pdf", space_file_path)
         print(space_url)
 
     elif "xlsx" in source:
@@ -478,6 +477,9 @@ async def generate_response(uid, persist_directory, rfe):
                                     "out.xlsx", 
                                     page_contents
                                     )
+        space_file_path = f"{uuid.uuid4()}.xlsx"
+        space_url = upload_to_space("out.xlsx", space_file_path)
+        print(space_url)
 
     elif "csv" in source:
         await highlight_text_in_csv(
@@ -485,15 +487,24 @@ async def generate_response(uid, persist_directory, rfe):
                                     "out.xlsx",
                                     page_contents
                                     )
+        space_file_path = f"{uuid.uuid4()}.xlsx"
+        space_url = upload_to_space("out.xlsx", space_file_path)
+        print(space_url)
+
     elif "docx" in source:
         await highlight_text_in_docx(
                                     f"{source}",
                                     "out.docx",
                                     page_contents
                                     )
+        space_file_path = f"{uuid.uuid4()}.docx"
+        space_url = upload_to_space("out.docx", space_file_path)
+        print(space_url)
         
     return {
         "AI_message": result["answer"].strip(),
         "Source": source,
+        "Pages" : set(pages),
+        "Annotated_file" : space_url
         # pdf file will be returned as well after deployment
         }
