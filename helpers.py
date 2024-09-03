@@ -8,14 +8,10 @@ from langchain_openai import AzureOpenAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import UnstructuredExcelLoader
-from langchain_community.document_loaders import Docx2txtLoader
 from langchain_community.document_loaders import TextLoader
 from langchain_community.document_loaders import CSVLoader
 from langchain_community.document_loaders.image import UnstructuredImageLoader
-from pinecone import Pinecone, ServerlessSpec
 from langchain.chains import create_history_aware_retriever
-from langchain_pinecone import PineconeVectorStore
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -26,7 +22,6 @@ from openpyxl.styles import PatternFill
 import csv
 import pandas as pd
 from docx import Document as DocxDocument
-from docx.shared import RGBColor
 from docx.enum.text import WD_COLOR_INDEX
 # from langchain_community.vectorstores.azuresearch import AzureSearch
 from langchain.schema import Document
