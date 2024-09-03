@@ -279,7 +279,7 @@ async def load_data(folder_path: str):
                     raw_documents = UnstructuredImageLoader(file).load()
                     all_documents.extend(raw_documents)
 
-
+                os.makedirs("backup_docs", exist_ok=True)
                 shutil.copy(file, "./backup_docs/")
                 os.remove(file)
             except Exception as e:
