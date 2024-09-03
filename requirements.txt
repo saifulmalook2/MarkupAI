@@ -36,3 +36,4 @@ openpyxl
 rapidocr-onnxruntime
 python-docx
 azure-search-documents
+boto3
