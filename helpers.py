@@ -364,7 +364,7 @@ async def create_chain(retriever: AzureAISearchRetriever, model):
             ("human", "{input}"),
             (
                 "human",
-                "Given the above conversation, generate a search query to look up in order to get information relevant to the conversation.",
+                "Given the above conversation and the {context}, generate a search query to look up in order to get information relevant to the conversation.",
             ),
         ]
     )
@@ -413,7 +413,7 @@ async def generate_response(uid, persist_directory, rfe):
         api_key=os.getenv("AZURE_SEARCH_KEY"),
         service_name="azure-vector-db",
         index_name="soc-index",
-        top_k=3,  # Number of documents to retrieve
+        top_k=5,  # Number of documents to retrieve
         filter=f"metadata/source eq '{persist_directory}'"
     )
     # Initialize Azure Chat model
