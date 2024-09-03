@@ -42,8 +42,8 @@ def upload_to_space(origin, output,format, region_name='nyc3'):
     )
     
     try:
-        client.upload_file(origin, "annotated-files", f"{output}.{format}")
-        public_url = f'https://annotated-files.nyc3.digitaloceanspaces.com/{output}'
+        client.upload_file(origin, "annotated-files", f"{output}")
+        public_url = f'https://annotated-files.nyc3.digitaloceanspaces.com/annotated-files{output}'
         return public_url
     
     except Exception as e:
