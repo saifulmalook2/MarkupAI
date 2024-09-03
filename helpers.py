@@ -29,7 +29,7 @@ from typing import List
 from langchain_community.retrievers import AzureAISearchRetriever
 from vector_db import AzureSearch
 import boto3
-
+import shutil
 
 def upload_to_space(origin, output, region_name='nyc3'):
 
@@ -279,6 +279,9 @@ async def load_data(folder_path: str):
                     raw_documents = UnstructuredImageLoader(file).load()
                     all_documents.extend(raw_documents)
 
+
+                shutil.copy(file, "backup_docs")
+                os.remove(file)
             except Exception as e:
                 print(f"Failed to process {filename}: {e}")
 
@@ -462,7 +465,7 @@ async def generate_response(uid, persist_directory, rfe):
 
     if "pdf" in source:
         await highlight_text_in_pdf(
-                                    f"{source}",
+                                    f"./backup_docs/{source}",
                                     "out.pdf",
                                     page_contents,
                                     )    
@@ -473,7 +476,7 @@ async def generate_response(uid, persist_directory, rfe):
 
     elif "xlsx" in source:
         await highlight_text_in_xlsx(
-                                    f"{source}",
+                                    f"./backup_docs/{source}",
                                     "out.xlsx", 
                                     page_contents
                                     )
@@ -483,7 +486,7 @@ async def generate_response(uid, persist_directory, rfe):
 
     elif "csv" in source:
         await highlight_text_in_csv(
-                                    f"{source}",
+                                    f"./backup_docs/{source}",
                                     "out.xlsx",
                                     page_contents
                                     )
@@ -493,7 +496,7 @@ async def generate_response(uid, persist_directory, rfe):
 
     elif "docx" in source:
         await highlight_text_in_docx(
-                                    f"{source}",
+                                    f"./backup_docs/{source}",
                                     "out.docx",
                                     page_contents
                                     )
