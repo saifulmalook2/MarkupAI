@@ -23,17 +23,16 @@ app = FastAPI()
 async def root():
     return {"msg": "OK"}
 
-class Upload(BaseModel):
-    files: List[UploadFile]
 
-@app.post("/upload_files")
-async def upload_files(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
+@app.post("/upload_files/{evidence_id}")
+async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, files: List[UploadFile] = File(...)):
     upload_folder = f"temp_docs"
     os.makedirs(upload_folder, exist_ok=True)
-    
+
     filenames = []
     for _file in files:
         filename = _file.filename.replace(" ", "_")
+        filename = f"{evidence_id}_{filename}" 
         file_path = os.path.join(upload_folder, filename)
         filenames.append(filename)
         with open(file_path, "wb") as buffer:
@@ -52,15 +51,15 @@ class ProjectManagmentUpload(BaseModel):
     name : str
     markup: bool
 
-@app.post("/project-management/analyze-upload")
-async def project_management_upload(data: ProjectManagmentUpload):
+@app.post("/project-management/analyze-upload/{evidence_id}")
+async def project_management_upload(evidence_id:str, data: ProjectManagmentUpload):
     data_doc = jsonable_encoder(data)
     rfe = data_doc['auditor_rfe']
     name = data_doc['name']
     uid = data_doc['uid']
     markup = data_doc['markup']
+    file_name = f"{evidence_id}_{name}"
 
-    response = await generate_response(uid, name, rfe, markup)
+    response = await generate_response(uid, file_name, rfe, markup)
     return response
     
-
