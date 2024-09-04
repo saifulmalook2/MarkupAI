@@ -344,7 +344,7 @@ chat_history = {}
 
 
 async def create_chain(retriever: AzureAISearchRetriever, model):
-    system_prompt = "You are an expert SOC2 Auditor. Your job is to decide if the provided evidence meets the auditor's standards and remediates the issue based on the company's knowledge base or only answer the user's request only based on the knowledge base/the documents provided t (Always give summarized answers within 100 words). {context}"
+    system_prompt = "You are an expert SOC2 Auditor. Your job is to decide if the provided evidence meets the auditor's standards and remediates the issue based on the company's knowledge base or only answer the user's request only based on the knowledge base/the documents provided (Always give summarized answers within 100 words). {context}"
 
     main_prompt = ChatPromptTemplate.from_messages(
         [
