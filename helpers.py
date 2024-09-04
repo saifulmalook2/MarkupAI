@@ -402,6 +402,9 @@ async def process_chat(chain, question, chat_history, dir):
 
 
 async def generate_response(uid, persist_directory, rfe, markup):
+
+    persist_directory = persist_directory.replace(" ", "_")
+    
     chat_history.setdefault(uid, [])
 
 
