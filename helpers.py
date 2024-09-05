@@ -393,7 +393,7 @@ async def process_chat(chain, question, chat_history, dir):
         score = docs.metadata['@search.score']
         metadata_dict = docs.metadata["metadata"]
         # print(metadata_dict)
-        if score >= 2 and metadata_dict['source'] == dir:
+        if score >= 5 and metadata_dict['source'] == dir:
             print("matched")
             custom_data = {"metadata" : metadata_dict, "page_content" : docs.page_content}
             final_response['context'].append(custom_data)
