@@ -240,6 +240,21 @@ async def excel_loader(file):
     return documents_with_rows
 
 
+def delete_all_in_dir(directory):
+    if os.path.exists(directory):
+        for filename in os.listdir(directory):
+            file_path = os.path.join(directory, filename)
+            try:
+                if os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+                else:
+                    os.remove(file_path)
+            except Exception as e:
+                print(f"Error deleting {file_path}: {e}")
+    else:
+        print(f"The directory {directory} does not exist.")
+
+
 async def load_data(folder_path: str):
     print("Background task initiated")
     try:
@@ -282,7 +297,7 @@ async def load_data(folder_path: str):
                 source_file = os.path.join("temp_docs", filename)
                 destination_file = os.path.join("docs", filename)
                 shutil.copy(source_file, destination_file)
-                os.remove(file)
+                delete_all_in_dir("temp_docs")
             except Exception as e:
                 print(f"Failed to process {filename}: {e}")
 
