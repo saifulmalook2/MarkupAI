@@ -62,6 +62,10 @@ async def project_management_upload(evidence_id:str, data: ProjectManagmentUploa
     markup = data_doc['markup']
     file_name = f"{evidence_id}_{name}"
 
+
+    print("file name", file_name)
+    print("evidence id", evidence_id)
+    print("original filename", name)
     response = await generate_response(uid, file_name, rfe, markup)
     return response
     
