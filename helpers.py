@@ -347,10 +347,10 @@ chat_history = {}
 def check_file_format(persist_directory: str):
     # Mapping of file extensions to output values
     file_format_output = {
-        ".pdf": 6,
-        ".csv": 4,
-        ".docx": 5,
-        ".xlsx": 5.5
+        ".pdf": (6, 4),
+        ".csv": (4, 10),
+        ".docx": (5, 4),
+        ".xlsx": (4, 10)
     }
 
     # Extract the file extension and return the corresponding value
@@ -421,12 +421,14 @@ async def generate_response(uid, persist_directory, rfe, markup):
     
     chat_history.setdefault(uid, [])
 
+    threshold, k = check_file_format(persist_directory)
+
 
     retriever = AzureAISearchRetriever(
         api_key=os.getenv("AZURE_SEARCH_KEY"),
         service_name="azure-vector-db",
         index_name="soc-index",
-        top_k=5,  # Number of documents to retrieve
+        top_k=k,  # Number of documents to retrieve
         filter=f"metadata/source eq '{persist_directory}'"
     )
     # Initialize Azure Chat model
@@ -442,7 +444,6 @@ async def generate_response(uid, persist_directory, rfe, markup):
     # Create chain with Azure Cognitive Search retriever and model
     chain = await create_chain(retriever, model)
 
-    threshold = check_file_format(persist_directory)
     # Process chat with the created chain
     result = await process_chat(chain, rfe, chat_history[uid], persist_directory, threshold)
     
@@ -529,7 +530,9 @@ async def generate_response(uid, persist_directory, rfe, markup):
     return {
         "AI_message": result["answer"].strip(),
         "Source": source,
-        "Pages" : pages,
+        "Pages/Rows" : pages,
         "Annotated_file" : space_url
         # pdf file will be returned as well after deployment
         }
+
+
