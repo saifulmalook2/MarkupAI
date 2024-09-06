@@ -30,6 +30,7 @@ from langchain_community.retrievers import AzureAISearchRetriever
 from vector_db import AzureSearch
 import boto3
 import shutil
+from pathlib import Path
 
 def upload_to_space(origin, output, region_name='nyc3'):
 
@@ -271,7 +272,6 @@ async def load_data(folder_path: str):
                     raw_documents = PyPDFLoader(file, extract_images=True).load()
                     all_documents.extend(raw_documents)
 
-
                 elif file_extension == ".xlsx":
                     print("Loading")
                     raw_documents = await excel_loader(file)
@@ -293,11 +293,6 @@ async def load_data(folder_path: str):
                     raw_documents = UnstructuredImageLoader(file).load()
                     all_documents.extend(raw_documents)
 
-                os.makedirs("docs", exist_ok=True)
-                source_file = os.path.join("temp_docs", filename)
-                destination_file = os.path.join("docs", filename)
-                shutil.copy(source_file, destination_file)
-                delete_all_in_dir("temp_docs")
             except Exception as e:
                 print(f"Failed to process {filename}: {e}")
 
@@ -307,48 +302,40 @@ async def load_data(folder_path: str):
         texts = text_splitter.split_documents(all_documents)
 
         print("split")
-        embedding = AzureOpenAIEmbeddings(
+
+        # Create clients using 'async with'
+        async with AzureOpenAIEmbeddings(
             model="text-embedding-ada-002",
             azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS"),
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT_EMBEDDINGS"),
             api_key=os.getenv("AZURE_OPENAI_API_KEY_EMBEDDINGS"),
-        )  
+        ) as embedding, AzureSearch(
+            azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
+            azure_search_key=os.getenv("AZURE_SEARCH_KEY"),
+            index_name="soc-index",  # Replace with your index name
+            embedding_function=embedding.embed_query,
+        ) as vectordb:
 
-        print("embeddings fetched")
-        vectordb = AzureSearch(
-                azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
-                azure_search_key=os.getenv("AZURE_SEARCH_KEY"),
-                index_name="soc-index",  # Replace with your index name
-                embedding_function=embedding.embed_query,
-            )
-        
-        print("db fetched")
+            print("embeddings fetched")
 
-        # vectordb.add_documents(documents=texts)
+            # Process text metadata
+            for text in texts:
+                if "id" not in text:
+                    text.id = str(uuid.uuid4())
 
-        # vectors = embedding.embed_documents([text.page_content for text in texts])
-        print("embeddings created")
-        for text in texts:
+                text.metadata["source"] = text.metadata["source"].split("\\")[-1]
 
-            if "id" not in text:
-                text.id = str(uuid.uuid4())
+                print(text)
+                if "row" in text.metadata:
+                    text.metadata["page"] = text.metadata['row']
+                    del text.metadata["row"]
 
-            text.metadata["source"] = text.metadata["source"].split("/")[-1]
+                if "sheet" not in text.metadata:
+                    text.metadata["sheet"] = ""
 
+            await vectordb.aadd_documents(documents=texts)
 
-            if "row" in text.metadata:
-                text.metadata["page"] = text.metadata['row']
-                del text.metadata["row"]
-
-            if "sheet" not in text.metadata:
-                text.metadata["sheet"] = ""
-
-        print(texts[0])
-        await vectordb.aadd_documents(documents=texts)
-
-        # index.upsert(vectors=zip(ids, vectors, metadatas), namespace="ai")
-
-        print("Files Added")
+            print("Files Added")
 
     except Exception as e:
         print(f"Error in load_data: {e}")
@@ -357,6 +344,18 @@ async def load_data(folder_path: str):
 chat_history = {}
 
 
+def check_file_format(persist_directory: str):
+    # Mapping of file extensions to output values
+    file_format_output = {
+        ".pdf": 6,
+        ".csv": 4,
+        ".docx": 5,
+        ".xlsx": 5.5
+    }
+
+    # Extract the file extension and return the corresponding value
+    file_extension = Path(persist_directory).suffix.lower()
+    return file_format_output.get(file_extension, 4)
 
 async def create_chain(retriever: AzureAISearchRetriever, model):
     system_prompt = "You are an expert SOC2 Auditor. Your job is to decide if the provided evidence meets the auditor's standards and remediates the issue based on the company's knowledge base or only answer the user's request only based on the knowledge base/the documents provided (Always give summarized answers within 100 words). {context}"
@@ -390,7 +389,7 @@ async def create_chain(retriever: AzureAISearchRetriever, model):
     return create_retrieval_chain(history_aware_retriever, chain)
 
 
-async def process_chat(chain, question, chat_history, dir):
+async def process_chat(chain, question, chat_history, dir, threshold):
     # Invoke the chain with input question and chat history
     response = chain.invoke({"input": question, "chat_history": chat_history})
     
@@ -407,9 +406,9 @@ async def process_chat(chain, question, chat_history, dir):
     for docs in response["context"]:
         score = docs.metadata['@search.score']
         metadata_dict = docs.metadata["metadata"]
-        # print(metadata_dict)
-        if score >= 5 and metadata_dict['source'] == dir:
-            print("matched")
+        print("got", score)
+        if score >= threshold and metadata_dict['source'] == dir:
+            print("matched", score)
             custom_data = {"metadata" : metadata_dict, "page_content" : docs.page_content}
             final_response['context'].append(custom_data)
 
@@ -443,8 +442,9 @@ async def generate_response(uid, persist_directory, rfe, markup):
     # Create chain with Azure Cognitive Search retriever and model
     chain = await create_chain(retriever, model)
 
+    threshold = check_file_format(persist_directory)
     # Process chat with the created chain
-    result = await process_chat(chain, rfe, chat_history[uid], persist_directory)
+    result = await process_chat(chain, rfe, chat_history[uid], persist_directory, threshold)
     
     print(result)
     chat_history[uid].extend(
