@@ -347,15 +347,15 @@ chat_history = {}
 def check_file_format(persist_directory: str):
     # Mapping of file extensions to output values
     file_format_output = {
-        ".pdf": (6, 4),
+        ".pdf": (6, 3),
         ".csv": (4, 10),
-        ".docx": (5, 4),
+        ".docx": (5, 3),
         ".xlsx": (4, 10)
     }
 
     # Extract the file extension and return the corresponding value
     file_extension = Path(persist_directory).suffix.lower()
-    return file_format_output.get(file_extension, 4)
+    return file_format_output.get(file_extension, (4,2))
 
 async def create_chain(retriever: AzureAISearchRetriever, model):
     system_prompt = "You are an expert SOC2 Auditor. Your job is to decide if the provided evidence meets the auditor's standards and remediates the issue based on the company's knowledge base or only answer the user's request only based on the knowledge base/the documents provided (Always give summarized answers within 100 words). {context}"
