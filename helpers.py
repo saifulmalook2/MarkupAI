@@ -335,7 +335,6 @@ async def load_data(folder_path: str):
 
             text.metadata["source"] = text.metadata["source"].split("\\")[-1]
 
-            print(text)
             if "row" in text.metadata:
                 text.metadata["page"] = text.metadata['row']
                 del text.metadata["row"]
