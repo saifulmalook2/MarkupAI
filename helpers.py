@@ -275,6 +275,10 @@ async def load_data(folder_path: str):
                 elif file_extension == ".xlsx":
                     print("Loading")
                     raw_documents = await excel_loader(file)
+                    # raw_documents = UnstructuredExcelLoader(
+                    #     file, mode="single"
+                    # ).load()
+                    # print("loaded", raw_documents)
                     all_documents.extend(raw_documents)
 
                 elif file_extension == ".csv":
@@ -282,6 +286,7 @@ async def load_data(folder_path: str):
                     all_documents.extend(raw_documents)
 
                 elif file_extension == ".docx":
+                    # raw_documents = Docx2txtLoader(file).load()
                     raw_documents = await docx_loader(file)
                     all_documents.extend(raw_documents)
 
@@ -302,43 +307,51 @@ async def load_data(folder_path: str):
         texts = text_splitter.split_documents(all_documents)
 
         print("split")
-
-        # Create clients using 'async with'
-        async with AzureOpenAIEmbeddings(
+        embedding = AzureOpenAIEmbeddings(
             model="text-embedding-ada-002",
             azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS"),
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT_EMBEDDINGS"),
             api_key=os.getenv("AZURE_OPENAI_API_KEY_EMBEDDINGS"),
-        ) as embedding, AzureSearch(
-            azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
-            azure_search_key=os.getenv("AZURE_SEARCH_KEY"),
-            index_name="soc-index",  # Replace with your index name
-            embedding_function=embedding.embed_query,
-        ) as vectordb:
+        )  
 
-            print("embeddings fetched")
+        print("embeddings fetched")
+        vectordb = AzureSearch(
+                azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
+                azure_search_key=os.getenv("AZURE_SEARCH_KEY"),
+                index_name="soc-index",  # Replace with your index name
+                embedding_function=embedding.embed_query,
+            )
+        
+        print("db fetched")
 
-            # Process text metadata
-            for text in texts:
-                if "id" not in text:
-                    text.id = str(uuid.uuid4())
+        # vectordb.add_documents(documents=texts)
 
-                text.metadata["source"] = text.metadata["source"].split("\\")[-1]
+        # vectors = embedding.embed_documents([text.page_content for text in texts])
+        print("embeddings created")
+        for text in texts:
 
-                print(text)
-                if "row" in text.metadata:
-                    text.metadata["page"] = text.metadata['row']
-                    del text.metadata["row"]
+            if "id" not in text:
+                text.id = str(uuid.uuid4())
 
-                if "sheet" not in text.metadata:
-                    text.metadata["sheet"] = ""
+            text.metadata["source"] = text.metadata["source"].split("\\")[-1]
 
-            await vectordb.aadd_documents(documents=texts)
+            print(text)
+            if "row" in text.metadata:
+                text.metadata["page"] = text.metadata['row']
+                del text.metadata["row"]
 
-            print("Files Added")
+            if "sheet" not in text.metadata:
+                text.metadata["sheet"] = ""
+
+        await vectordb.aadd_documents(documents=texts)
+
+        # index.upsert(vectors=zip(ids, vectors, metadatas), namespace="ai")
+
+        print("Files Added")
 
     except Exception as e:
         print(f"Error in load_data: {e}")
+
 
 
 chat_history = {}
