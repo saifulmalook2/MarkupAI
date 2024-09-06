@@ -33,6 +33,7 @@ async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, file
     for _file in files:
         filename = _file.filename.replace(" ", "_")
         filename = f"{evidence_id}_{filename}" 
+        print("filename", filename)
         file_path = os.path.join(upload_folder, filename)
         filenames.append(filename)
         with open(file_path, "wb") as buffer:
