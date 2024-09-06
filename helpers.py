@@ -272,13 +272,10 @@ async def load_data(folder_path: str):
                     raw_documents = PyPDFLoader(file, extract_images=True).load()
                     all_documents.extend(raw_documents)
 
+
                 elif file_extension == ".xlsx":
                     print("Loading")
                     raw_documents = await excel_loader(file)
-                    # raw_documents = UnstructuredExcelLoader(
-                    #     file, mode="single"
-                    # ).load()
-                    # print("loaded", raw_documents)
                     all_documents.extend(raw_documents)
 
                 elif file_extension == ".csv":
@@ -286,7 +283,6 @@ async def load_data(folder_path: str):
                     all_documents.extend(raw_documents)
 
                 elif file_extension == ".docx":
-                    # raw_documents = Docx2txtLoader(file).load()
                     raw_documents = await docx_loader(file)
                     all_documents.extend(raw_documents)
 
@@ -298,6 +294,11 @@ async def load_data(folder_path: str):
                     raw_documents = UnstructuredImageLoader(file).load()
                     all_documents.extend(raw_documents)
 
+                os.makedirs("docs", exist_ok=True)
+                source_file = os.path.join("temp_docs", filename)
+                destination_file = os.path.join("docs", filename)
+                shutil.copy(source_file, destination_file)
+                delete_all_in_dir("temp_docs")
             except Exception as e:
                 print(f"Failed to process {filename}: {e}")
 
@@ -333,7 +334,8 @@ async def load_data(folder_path: str):
             if "id" not in text:
                 text.id = str(uuid.uuid4())
 
-            text.metadata["source"] = text.metadata["source"].split("\\")[-1]
+            text.metadata["source"] = text.metadata["source"].split("/")[-1]
+
 
             if "row" in text.metadata:
                 text.metadata["page"] = text.metadata['row']
@@ -342,6 +344,7 @@ async def load_data(folder_path: str):
             if "sheet" not in text.metadata:
                 text.metadata["sheet"] = ""
 
+        print(texts[0])
         await vectordb.aadd_documents(documents=texts)
 
         # index.upsert(vectors=zip(ids, vectors, metadatas), namespace="ai")
@@ -352,8 +355,9 @@ async def load_data(folder_path: str):
         print(f"Error in load_data: {e}")
 
 
-
 chat_history = {}
+
+
 
 
 def check_file_format(persist_directory: str):
