@@ -163,25 +163,43 @@ async def highlight_text_in_docx(docx_file, output_file, index_dict):
         ending_index = para_index * 3 + 3
         starting_index = para_index * 3
 
+        # Ensure the range of paragraphs does not exceed the document length
         for paragraph_index in range(starting_index, ending_index):
-            if paragraph_index >= len(doc.paragraphs): 
+            if paragraph_index >= len(doc.paragraphs):  # Skip if out of range
                 break
 
             paragraph = doc.paragraphs[paragraph_index]
             para_text = paragraph.text
 
+            # Create a new paragraph to accumulate the highlighted text
+            new_paragraph_runs = []
+
+            # Split the paragraph text to highlight relevant parts
+            pos = 0
             for q_text in index_dict.get(para_index, []):
                 if q_text and q_text in para_text:
-                    print("highlighting", q_text)
-                    new_paragraph = doc.add_paragraph()
-                    run = new_paragraph.add_run(para_text.replace(q_text, f"{q_text}"))
-                    run.font.highlight_color = WD_COLOR_INDEX.YELLOW
+                    start_pos = para_text.find(q_text, pos)
+                    end_pos = start_pos + len(q_text)
+                    if start_pos != -1:
+                        # Add text before the highlight
+                        if start_pos > pos:
+                            new_paragraph_runs.append((para_text[pos:start_pos], None))
+                        # Add highlighted text
+                        new_paragraph_runs.append((q_text, WD_COLOR_INDEX.YELLOW))
+                        pos = end_pos
 
-            # Remove the original paragraph if it was replaced
-            if para_text != paragraph.text:
-                paragraph.clear()  
-                paragraph.add_run(new_paragraph.text).font.highlight_color = WD_COLOR_INDEX.YELLOW
+            # Add any remaining text after the last highlight
+            if pos < len(para_text):
+                new_paragraph_runs.append((para_text[pos:], None))
 
+            # Clear the original paragraph and add the highlighted text
+            paragraph.clear()
+            for text, highlight in new_paragraph_runs:
+                run = paragraph.add_run(text)
+                if highlight:
+                    run.font.highlight_color = highlight
+
+    # Save the document with highlighted text
     doc.save(output_file)
     print(f"Highlighted document saved as {output_file}")
 
