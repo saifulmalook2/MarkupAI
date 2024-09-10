@@ -101,7 +101,6 @@ async def highlight_text_in_pdf(input_path, output_path, page_contents):
 
 async def highlight_text_in_xlsx(input_path, output_path, page_contents):
     workbook = openpyxl.load_workbook(input_path)
-    print(page_contents)
     for page_num, details in page_contents.items():
         sheet_name = details['sheet']
         texts_to_highlight = details['text']
@@ -112,7 +111,6 @@ async def highlight_text_in_xlsx(input_path, output_path, page_contents):
             row = sheet[page_num]
             for cell in row:
                 for text in texts_to_highlight:
-                    print("found", text,str(cell.value), "==")
                     if text not in ["", "nan"] and text.strip() == (str(cell.value)).strip():
                         print("match")
                         cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
@@ -139,7 +137,6 @@ async def highlight_text_in_csv(csv_file_path, xlsx_file_path, index_dict):
                 values = index_dict[index_csv]
                 for col_val in row:
                     if any(val in col_val or col_val in val for val in values):
-                        print(f"Row {index_csv}: {row}")
                         break
 
             ws.append(row)
@@ -364,9 +361,9 @@ def check_file_format(persist_directory: str):
     # Mapping of file extensions to output values
     file_format_output = {
         ".pdf": (6, 3),
-        ".csv": (4, 10),
+        ".csv": (6, 8),
         ".docx": (5, 3),
-        ".xlsx": (4, 10)
+        ".xlsx": (6, 8)
     }
 
     # Extract the file extension and return the corresponding value
