@@ -624,6 +624,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
         
         if "page_content" in doc_details:
             markup_check = True
+
             lines = doc_details["page_content"].splitlines()
 
         
@@ -654,6 +655,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
     space_url = ""
 
     if markup and markup_check:
+        ai_answer = result["answer"].strip()
         if "pdf" in source:
             await highlight_text_in_pdf(
                                         f"./docs/{source}",
@@ -695,8 +697,11 @@ async def generate_response(uid, persist_directory, rfe, markup):
             space_url = upload_to_space("out.docx", space_file_path)
             print(space_url)
         
+    if not markup_check:
+        ai_answer = "Your question is not relevant to the evidence"
+
     return {
-        "AI_message": result["answer"].strip(),
+        "AI_message": ai_answer,
         "Source": source,
         "Pages/Rows" : pages,
         "Annotated_file" : space_url
