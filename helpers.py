@@ -516,10 +516,12 @@ async def generate_response(uid, persist_directory, rfe, markup):
 
     # Process chat with the created chain
     result = await process_chat(chain, rfe, chat_history[uid], persist_directory, threshold)
-    
-    result_new = await clean_content(result)
 
-    print(result)
+    print("original")
+     
+    result = await clean_content(result)
+
+    print("filtered",result)
     chat_history[uid].extend(
         [HumanMessage(content=rfe), AIMessage(content=result["answer"])]
     )
