@@ -300,6 +300,7 @@ async def image_loader(image_file):
             ]
         )
         
+        print("RESPONSE AI", response_ai)
         # Parse the response from OpenAI
         extracted_content = response_ai.choices[0].message.content
         
@@ -312,7 +313,7 @@ async def image_loader(image_file):
             )
             documents_with_content.append(doc)
             print(doc)
-                    
+
         return documents_with_content
     
     except Exception as e:
