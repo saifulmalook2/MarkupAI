@@ -402,12 +402,11 @@ async def clean_content(response):
         response_text = response_ai.choices[0].message.content.strip()
         # Convert the string response to a Python dictionary
         filtered_context = json.loads(response_text)
-        print("type", type(filtered_context), filtered_context)
-        # response['context'] = new_context['context']
+        response['context'] = filtered_context['context']
         return response
 
     except Exception as e:
-        print(f"Error filtering context using Azure OpenAI: {e}")
+        print(f"Passing context as is due to Error: {e}")
         return response
 
 
