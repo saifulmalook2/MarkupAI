@@ -209,7 +209,7 @@ async def docx_loader(file):
     # Handle remaining paragraphs
     if current_group_content:
         doc_with_group = Document(
-                                    metadata={"source" : file, "paragraph_group_number" : paragraph_group_number},
+                                    metadata={"source" : file, "page" : paragraph_group_number},
                                     id=str(uuid.uuid4()),
                                     page_content="\n".join(current_group_content)
                                 )
@@ -339,10 +339,6 @@ async def load_data(folder_path: str):
 
             if "row" in text.metadata:
                 text.metadata["page"] = text.metadata['row']
-                del text.metadata["row"]
-
-            elif "paragraph_group_number" in text.metadata:
-                text.metadata["page"] = text.metadata['paragraph_group_number']
                 del text.metadata["row"]
 
             if "sheet" not in text.metadata:
