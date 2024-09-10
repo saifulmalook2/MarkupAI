@@ -58,7 +58,7 @@ async def project_management_upload(evidence_id:str, data: ProjectManagmentUploa
     data_doc = jsonable_encoder(data)
     rfe = data_doc['auditor_rfe']
     name = data_doc['name']
-    name =  os.path.abspath(name)
+    name =  os.path.basename(name).split()
     uid = data_doc['uid']
     markup = data_doc['markup']
     file_name = f"{evidence_id}_{name}"
