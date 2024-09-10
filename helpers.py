@@ -410,10 +410,10 @@ async def clean_content(response):
 def check_file_format(persist_directory: str):
     # Mapping of file extensions to output values
     file_format_output = {
-        ".pdf": (6, 4),
-        ".csv": (11, 7),
+        ".pdf": (5, 4),
+        ".csv": (5, 7),
         ".docx": (5, 4),
-        ".xlsx": (11, 7)
+        ".xlsx": (5, 7)
     }
 
     # Extract the file extension and return the corresponding value
@@ -514,8 +514,8 @@ async def generate_response(uid, persist_directory, rfe, markup):
     # Process chat with the created chain
     result = await process_chat(chain, rfe, chat_history[uid], persist_directory, threshold)
     
-    result = await clean_content(result)
-    
+    result_new = await clean_content(result)
+
     print(result)
     chat_history[uid].extend(
         [HumanMessage(content=rfe), AIMessage(content=result["answer"])]
