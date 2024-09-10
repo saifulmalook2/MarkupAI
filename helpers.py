@@ -111,6 +111,7 @@ async def highlight_text_in_xlsx(input_path, output_path, page_contents):
             row = sheet[page_num]
             for cell in row:
                 for text in texts_to_highlight:
+                    print("to highlight",text)
                     if text not in ["", "nan"] and text.strip() == (str(cell.value)).strip():
                         print("match")
                         cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
