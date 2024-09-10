@@ -67,6 +67,8 @@ async def project_management_upload(evidence_id:str, data: ProjectManagmentUploa
     print("file name", file_name)
     print("evidence id", evidence_id)
     print("original filename", name)
-    response = await generate_response(uid, file_name, rfe, markup)
+
+    user_id = f"{uid}-{evidence_id}"
+    response = await generate_response(user_id, file_name, rfe, markup)
     return response
     

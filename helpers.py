@@ -444,7 +444,7 @@ chat_history = {}
 
 
 
-async def clean_content(response):
+async def clean_content(response, source):
     
     client = AzureOpenAI(
         azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT"), 
@@ -458,16 +458,20 @@ async def clean_content(response):
     # System prompt for OpenAI
     system_prompt = """
     Your task is to filter irrelevant content based on the provided question or answer:
-    Answer: {user_question}.
+    Question & Answer: {user_question}.
     
     Please return only the contexts that are relevant to this question or answer.
     
+    Also if the source mentioned in the context is not the same as '{source}' then 
+    answer should be equal to 'This is not relevant' 
+    if the source mentioned in the context is the same as '{source}' the  answer should be equal to false
     Respond in similar JSON format.
+    "answer" : "..."
     "context" : [...]
     """
 
     # Format the system prompt
-    system_prompt = system_prompt.format(user_question=user_question)
+    system_prompt = system_prompt.format(user_question=user_question, source=source)
 
     # Prepare the user message containing the context
     context_message = f"Here is the context to filter:\n{response['context']}"
@@ -482,6 +486,8 @@ async def clean_content(response):
                 {"role": "user", "content": context_message}
             ]
         )
+
+        print(response_ai)
 
         # Parse the response from the API and return the filtered context
         response_text = response_ai.choices[0].message.content.strip()
@@ -604,7 +610,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
 
     print("original", result)
      
-    result = await clean_content(result)
+    result = await clean_content(result, persist_directory)
 
     print("filtered",result)
     chat_history[uid].extend(
