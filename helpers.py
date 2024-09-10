@@ -399,7 +399,9 @@ async def clean_content(response):
         )
 
         # Parse the response from the API and return the filtered context
-        print(response_ai.choices[0].message.content)
+        print("tyoe of resp",type(response_ai.choices[0].message.content))
+        new_context = response_ai.choices[0].message.content
+        # response['context'] = new_context['context']
         return response
 
     except Exception as e:
