@@ -361,9 +361,9 @@ chat_history = {}
 def check_file_format(persist_directory: str):
     # Mapping of file extensions to output values
     file_format_output = {
-        ".pdf": (6, 3),
+        ".pdf": (6, 4),
         ".csv": (11, 7),
-        ".docx": (5, 3),
+        ".docx": (5, 4),
         ".xlsx": (11, 7)
     }
 
