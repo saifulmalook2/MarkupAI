@@ -283,7 +283,7 @@ async def image_loader(image_file):
     
     Please extract any relevant text from the image and return it in a structured format.
     
-    Respond in list of texts:
+    Respond in JSON list of texts:
     "content" : [text1, text2, ...]
     """
 
