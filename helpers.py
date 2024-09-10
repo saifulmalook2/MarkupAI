@@ -453,14 +453,14 @@ async def clean_content(response):
         azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT")
         )
 
-    user_question = f"Is this content relevant to the following answer: {response['answer']}?"
+    user_question = f"Is this content relevant to the following question: {response["input"]}, or answer: {response['answer']}?"
     
     # System prompt for OpenAI
     system_prompt = """
-    Your task is to filter irrelevant content based on the provided answer:
+    Your task is to filter irrelevant content based on the provided question or answer:
     Answer: {user_question}.
     
-    Please return only the contexts that are relevant to this answer.
+    Please return only the contexts that are relevant to this question or answer.
     
     Respond in similar JSON format.
     "context" : [...]
