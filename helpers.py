@@ -32,6 +32,7 @@ import boto3
 import shutil
 from pathlib import Path
 from openai import AzureOpenAI
+import base64
 
 
 def upload_to_space(origin, output, region_name='nyc3'):
@@ -262,6 +263,65 @@ async def excel_loader(file):
     return documents_with_rows
 
 
+async def image_loader(image_file):
+    # Initialize Azure OpenAI client
+    client = AzureOpenAI(
+        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"), 
+        api_key=os.getenv("AZURE_OPENAI_API_KEY"),  
+        api_version="2024-02-15-preview",
+        azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT")
+    )
+
+    # Read the image file
+    with open(image_file, 'rb') as img:
+        image_base64 = base64.b64encode(img.read()).decode('utf-8')
+
+    # System prompt for OpenAI
+    system_prompt = """
+    Your task is to extract and summarize the content from the provided image.
+    
+    Please extract any relevant text from the image and return it in a structured format.
+    
+    Respond in similar JSON format:
+    "content" : [...]
+    """
+
+    # Prepare the user message containing the image data
+    image_message = f"![image](data:image/png;base64,{image_base64})"
+
+    # Call the Azure OpenAI API
+    try:
+        response_ai = await client.chat.completions.create(
+            model="gpt-4o",  # Use the correct model deployed in your Azure instance
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": image_message}
+            ]
+        )
+        
+        # Parse the response from OpenAI
+        extracted_content = response_ai.choices[0].message.content
+        
+        # Convert extracted content into documents
+        documents_with_content = []
+        for item in extracted_content:
+            doc = Document(
+                metadata={"source": image_file},  # or any other relevant metadata
+                page_content=item
+            )
+            documents_with_content.append(doc)
+            print(doc)
+                    
+        return documents_with_content
+    
+    except Exception as e:
+        print("Error processing image:", e)
+        return []
+
+
+
+
 def delete_all_in_dir(directory):
     if os.path.exists(directory):
         for filename in os.listdir(directory):
@@ -312,7 +372,8 @@ async def load_data(folder_path: str):
                     all_documents.extend(raw_documents)
 
                 elif file_extension in [".jpg", ".jpeg", ".png"]:
-                    raw_documents = UnstructuredImageLoader(file).load()
+                    # raw_documents = UnstructuredImageLoader(file).load()
+                    raw_documents = await image_loader(file)
                     all_documents.extend(raw_documents)
 
                 os.makedirs("docs", exist_ok=True)
