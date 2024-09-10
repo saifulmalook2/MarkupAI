@@ -619,28 +619,31 @@ async def generate_response(uid, persist_directory, rfe, markup):
 
     source = persist_directory
     pages, page_contents = set(), {}
+    markup_check = False
     for doc_details in result["context"]:
+        
+        if "page_content" in doc_details:
+            markup_check = True
+            lines = doc_details["page_content"].splitlines()
 
-        lines = doc_details["page_content"].splitlines()
+        
+            if "pdf" in source:
+                page = int(doc_details['metadata'].get('page')) + 1
+                page_contents[page] = lines
 
-       
-        if "pdf" in source:
-            page = int(doc_details['metadata'].get('page')) + 1
-            page_contents[page] = lines
+            elif "page_name" in source:
+                page = doc_details['metadata'].get('page_name')
+                page_contents[page] = lines
 
-        elif "page_name" in source:
-            page = doc_details['metadata'].get('page_name')
-            page_contents[page] = lines
+            elif source.endswith((".xlsx", ".csv")):
+                page = int(doc_details['metadata'].get('page')) + 1
+                page_contents[page] = {"sheet": doc_details['metadata'].get('sheet'), "text" : lines}
 
-        elif source.endswith((".xlsx", ".csv")):
-            page = int(doc_details['metadata'].get('page')) + 1
-            page_contents[page] = {"sheet": doc_details['metadata'].get('sheet'), "text" : lines}
-
-        elif "docx" in source:
-            page = int(doc_details['metadata'].get('page'))
-            page_contents[page] = doc_details["page_content"].split("\n")
-        else:
-            page = 0
+            elif "docx" in source:
+                page = int(doc_details['metadata'].get('page'))
+                page_contents[page] = doc_details["page_content"].split("\n")
+            else:
+                page = 0
         # page = doc_details['metadata'].get('page') or doc_details['metadata'].get('page_name')
 
         # page_contents.setdefault(page, lines)
@@ -650,7 +653,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
     
     space_url = ""
 
-    if markup:
+    if markup and markup_check:
         if "pdf" in source:
             await highlight_text_in_pdf(
                                         f"./docs/{source}",
