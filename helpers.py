@@ -361,9 +361,9 @@ def check_file_format(persist_directory: str):
     # Mapping of file extensions to output values
     file_format_output = {
         ".pdf": (6, 3),
-        ".csv": (6, 8),
+        ".csv": (10, 6),
         ".docx": (5, 3),
-        ".xlsx": (6, 8)
+        ".xlsx": (10, 6)
     }
 
     # Extract the file extension and return the corresponding value
