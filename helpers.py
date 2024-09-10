@@ -453,7 +453,7 @@ async def clean_content(response):
         azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT")
         )
 
-    user_question = f"Is this content relevant to the following question: {response["input"]}, or answer: {response['answer']}?"
+    user_question = f"Is this content relevant to the following question: {response['input']}, or answer: {response['answer']}?"
     
     # System prompt for OpenAI
     system_prompt = """
