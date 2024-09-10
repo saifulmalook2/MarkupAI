@@ -281,7 +281,10 @@ async def image_loader(image_file):
     Your task is to extract and summarize the content from the provided image.
     Such as what is in the image and all the text etc, basically each and every detail.
     
-    Please extract any relevant text from the image and return it.
+    Please extract any relevant text from the image and return it in a structured format.
+    
+    Respond in list of texts:
+    "content" : [text1, text2, ...]
     """
 
     # Prepare the user message containing the image data
@@ -291,6 +294,7 @@ async def image_loader(image_file):
     try:
         response_ai = client.chat.completions.create(
             model="gpt-4o",  # Use the correct model deployed in your Azure instance
+            response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": image_message}
@@ -309,7 +313,6 @@ async def image_loader(image_file):
                 page_content=item
             )
             documents_with_content.append(doc)
-            print(doc)
 
         return documents_with_content
     
