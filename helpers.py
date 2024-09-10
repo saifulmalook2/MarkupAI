@@ -172,6 +172,8 @@ async def highlight_text_in_docx(docx_file, output_file, index_dict):
             for q_text in index_dict[para_index]:
                 if q_text != "" and q_text in para_text:
                     highlighted_text = f"{q_text}"
+
+                    print("highlighting", q_text)
                     para_text = para_text.replace(q_text, highlighted_text)
 
             paragraph.clear()  
