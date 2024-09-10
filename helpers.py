@@ -464,7 +464,7 @@ async def clean_content(response, source):
     
     Also if the source mentioned in the context is not the same as '{source}' then 
     answer should be equal to 'This is not relevant' 
-    if the source mentioned in the context is the same as '{source}' the  answer should be equal to false
+    if the source mentioned in the context is the same as '{source}' the  answer should be equal to '' empty string
     Respond in similar JSON format.
     "answer" : "..."
     "context" : [...]
