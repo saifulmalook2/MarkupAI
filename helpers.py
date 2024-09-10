@@ -413,9 +413,9 @@ async def clean_content(response):
 def check_file_format(persist_directory: str):
     # Mapping of file extensions to output values
     file_format_output = {
-        ".pdf": (5, 4),
+        ".pdf": (5, 7),
         ".csv": (5, 7),
-        ".docx": (5, 4),
+        ".docx": (5, 7),
         ".xlsx": (5, 7)
     }
 
