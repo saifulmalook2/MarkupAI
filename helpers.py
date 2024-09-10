@@ -515,7 +515,7 @@ def check_file_format(persist_directory: str):
     return file_format_output.get(file_extension, (1,5))
 
 async def create_chain(retriever, model):
-    system_prompt = "You are an expert SOC2 Auditor. Your job is to provide answers relevant to the knowledge base provided.  Do not provide any information that is not explicitly contained in the documents retrieved.  Always give summarized answers using only the content from the retrieved documents.  If there is not any information in the documents, respond with 'Try rephrasing your question' . {context}"
+    system_prompt = "You are an expert SOC2 Auditor. Your job is to provide answers relevant to the knowledge base provided.  Do not provide any information that is not explicitly contained in the documents retrieved.  Always give summarized answers using only the content from the retrieved documents.  If there is not any information in the documents, respond with 'Try rephrasing your question' or 'Your question is not relevant' . {context}"
     
     main_prompt = ChatPromptTemplate.from_messages(
         [
