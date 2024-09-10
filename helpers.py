@@ -301,7 +301,6 @@ async def image_loader(image_file):
             ]
         )
         
-        print("RESPONSE AI", response_ai)
         # Parse the response from OpenAI
         response_text = response_ai.choices[0].message.content.strip()
         # Convert the string response to a Python dictionary
@@ -309,12 +308,14 @@ async def image_loader(image_file):
         
         # Convert extracted content into documents
         documents_with_content = []
-        for item in filtered_context['context']:
+        for item in filtered_context['content']:
             doc = Document(
                 metadata={"source": image_file},  # or any other relevant metadata
                 page_content=item
             )
+            print(doc)
             documents_with_content.append(doc)
+        print("RESPONSE AI", response_ai)
 
         return documents_with_content
     
@@ -379,58 +380,58 @@ async def load_data(folder_path: str):
                     raw_documents = await image_loader(file)
                     all_documents.extend(raw_documents)
 
-                os.makedirs("docs", exist_ok=True)
-                source_file = os.path.join("temp_docs", filename)
-                destination_file = os.path.join("docs", filename)
-                shutil.copy(source_file, destination_file)
-                delete_all_in_dir("temp_docs")
+        #         os.makedirs("docs", exist_ok=True)
+        #         source_file = os.path.join("temp_docs", filename)
+        #         destination_file = os.path.join("docs", filename)
+        #         shutil.copy(source_file, destination_file)
+        #         delete_all_in_dir("temp_docs")
             except Exception as e:
                 print(f"Failed to process {filename}: {e}")
 
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=300, chunk_overlap=50
-        )
-        texts = text_splitter.split_documents(all_documents)
+        # text_splitter = RecursiveCharacterTextSplitter(
+        #     chunk_size=300, chunk_overlap=50
+        # )
+        # texts = text_splitter.split_documents(all_documents)
 
-        print("split")
-        embedding = AzureOpenAIEmbeddings(
-            model="text-embedding-ada-002",
-            azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS"),
-            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT_EMBEDDINGS"),
-            api_key=os.getenv("AZURE_OPENAI_API_KEY_EMBEDDINGS"),
-        )  
+        # print("split")
+        # embedding = AzureOpenAIEmbeddings(
+        #     model="text-embedding-ada-002",
+        #     azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS"),
+        #     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT_EMBEDDINGS"),
+        #     api_key=os.getenv("AZURE_OPENAI_API_KEY_EMBEDDINGS"),
+        # )  
 
-        print("embeddings fetched")
-        vectordb = AzureSearch(
-                azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
-                azure_search_key=os.getenv("AZURE_SEARCH_KEY"),
-                index_name="soc-index",  # Replace with your index name
-                embedding_function=embedding.embed_query,
-            )
+        # print("embeddings fetched")
+        # vectordb = AzureSearch(
+        #         azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
+        #         azure_search_key=os.getenv("AZURE_SEARCH_KEY"),
+        #         index_name="soc-index",  # Replace with your index name
+        #         embedding_function=embedding.embed_query,
+        #     )
         
-        print("db fetched")
+        # print("db fetched")
 
-        # vectordb.add_documents(documents=texts)
+        # # vectordb.add_documents(documents=texts)
 
-        # vectors = embedding.embed_documents([text.page_content for text in texts])
-        print("embeddings created")
-        for text in texts:
+        # # vectors = embedding.embed_documents([text.page_content for text in texts])
+        # print("embeddings created")
+        # for text in texts:
 
-            if "id" not in text:
-                text.id = str(uuid.uuid4())
+        #     if "id" not in text:
+        #         text.id = str(uuid.uuid4())
 
-            text.metadata["source"] = text.metadata["source"].split("/")[-1]
+        #     text.metadata["source"] = text.metadata["source"].split("/")[-1]
 
 
-            if "row" in text.metadata:
-                text.metadata["page"] = text.metadata['row']
-                del text.metadata["row"]
+        #     if "row" in text.metadata:
+        #         text.metadata["page"] = text.metadata['row']
+        #         del text.metadata["row"]
 
-            if "sheet" not in text.metadata:
-                text.metadata["sheet"] = ""
+        #     if "sheet" not in text.metadata:
+        #         text.metadata["sheet"] = ""
 
-        print(texts[0])
-        await vectordb.aadd_documents(documents=texts)
+        # print(texts[0])
+        # await vectordb.aadd_documents(documents=texts)
 
         # index.upsert(vectors=zip(ids, vectors, metadatas), namespace="ai")
 
