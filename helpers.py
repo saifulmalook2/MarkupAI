@@ -279,11 +279,9 @@ async def image_loader(image_file):
     # System prompt for OpenAI
     system_prompt = """
     Your task is to extract and summarize the content from the provided image.
+    Such as what is in the image and all the text etc, basically each and every detail.
     
-    Please extract any relevant text from the image and return it in a structured format.
-    
-    Respond in similar JSON format:
-    "content" : [...]
+    Please extract any relevant text from the image and return it.
     """
 
     # Prepare the user message containing the image data
@@ -293,7 +291,6 @@ async def image_loader(image_file):
     try:
         response_ai = client.chat.completions.create(
             model="gpt-4o",  # Use the correct model deployed in your Azure instance
-            response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": image_message}
