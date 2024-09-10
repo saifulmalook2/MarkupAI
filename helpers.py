@@ -263,7 +263,7 @@ async def excel_loader(file):
     return documents_with_rows
 
 
-async def image_loader(image_file):
+async def image_loader(image_file, image_url):
     # Initialize Azure OpenAI client
     client = AzureOpenAI(
         azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"), 
@@ -272,13 +272,9 @@ async def image_loader(image_file):
         azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT")
     )
 
-    # Read the image file
-    with open(image_file, 'rb') as img:
-        image_base64 = base64.b64encode(img.read()).decode('utf-8')
-
     # System prompt for OpenAI
     system_prompt = """
-    Your task is to extract and summarize the content from the provided image.
+    Your task is to extract the content from the provided image by telling me what is in the image.
     Such as what is in the image and all the text etc, basically each and every detail.
     
     Please extract any relevant text from the image and return it in a structured format.
@@ -288,7 +284,7 @@ async def image_loader(image_file):
     """
 
     # Prepare the user message containing the image data
-    image_message = f"![image](data:image/png;base64,{image_base64})"
+    image_message = f"![image]({image_url})"
 
     # Call the Azure OpenAI API
     try:
@@ -377,7 +373,11 @@ async def load_data(folder_path: str):
 
                 elif file_extension in [".jpg", ".jpeg", ".png"]:
                     # raw_documents = UnstructuredImageLoader(file).load()
-                    raw_documents = await image_loader(file)
+                    
+                    space_url = upload_to_space(file, file)
+
+                    print(space_url)
+                    raw_documents = await image_loader(file, space_url)
                     all_documents.extend(raw_documents)
 
         #         os.makedirs("docs", exist_ok=True)
