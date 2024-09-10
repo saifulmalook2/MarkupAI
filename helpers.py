@@ -341,6 +341,10 @@ async def load_data(folder_path: str):
                 text.metadata["page"] = text.metadata['row']
                 del text.metadata["row"]
 
+            elif "paragraph_group_number" in text.metadata:
+                text.metadata["page"] = text.metadata['paragraph_group_number']
+                del text.metadata["row"]
+
             if "sheet" not in text.metadata:
                 text.metadata["sheet"] = ""
 
