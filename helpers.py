@@ -276,6 +276,8 @@ async def image_loader(image_file, image_url):
     system_prompt = """
     Your task is to extract the content from the provided image by telling me what is in the image.
     Such as what is in the image and all the text etc, basically each and every detail.
+    Also whatever is in the image explain it in detail, it does not just need to be a text, 
+    It can be an image of anything.
     
     Please extract any relevant text from the image and return it in a structured format.
     
@@ -374,8 +376,6 @@ async def load_data(folder_path: str):
                     # raw_documents = UnstructuredImageLoader(file).load()
                     
                     space_url = upload_to_space(file, file)
-
-                    print(space_url)
                     raw_documents = await image_loader(file, space_url)
                     all_documents.extend(raw_documents)
 
