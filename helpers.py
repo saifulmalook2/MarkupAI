@@ -31,6 +31,8 @@ from vector_db import AzureSearch
 import boto3
 import shutil
 from pathlib import Path
+from openai import AzureOpenAI
+
 
 def upload_to_space(origin, output, region_name='nyc3'):
 
@@ -357,6 +359,53 @@ chat_history = {}
 
 
 
+async def clean_content(response):
+    
+    client = AzureOpenAI(
+        azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT"), 
+        api_key=os.getenv("AZURE_OPENAI_API_KEY"),  
+        api_version="2024-02-15-preview",
+        azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT")
+        )
+
+    user_question = f"Is this content relevant to the following answer: {response['answer']}?"
+    
+    # System prompt for OpenAI
+    system_prompt = """
+    Your task is to filter irrelevant content based on the provided answer:
+    Answer: {user_question}.
+    
+    Please return only the contexts that are relevant to this answer.
+    
+    Respond in similar JSON format.
+    "context" : [...]
+    """
+
+    # Format the system prompt
+    system_prompt = system_prompt.format(user_question=user_question)
+
+    # Prepare the user message containing the context
+    context_message = f"Here is the context to filter:\n{response['context']}"
+
+    # Call the Azure OpenAI API
+    try:
+        response_ai = client.chat.completions.create(
+            model="gpt-4o",  # Use the correct model deployed in your Azure instance
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": context_message}
+            ]
+        )
+
+        # Parse the response from the API and return the filtered context
+        print(response_ai.choices[0].message.content)
+        return response
+
+    except Exception as e:
+        print(f"Error filtering context using Azure OpenAI: {e}")
+        return response
+
 
 def check_file_format(persist_directory: str):
     # Mapping of file extensions to output values
@@ -464,6 +513,8 @@ async def generate_response(uid, persist_directory, rfe, markup):
 
     # Process chat with the created chain
     result = await process_chat(chain, rfe, chat_history[uid], persist_directory, threshold)
+    
+    result = await clean_content(result)
     
     print(result)
     chat_history[uid].extend(
