@@ -613,6 +613,9 @@ async def generate_response(uid, persist_directory, rfe, markup):
     result = await clean_content(result, persist_directory)
 
     print("filtered",result)
+    
+    ai_answer = result["answer"].strip()
+
     chat_history[uid].extend(
         [HumanMessage(content=rfe), AIMessage(content=result["answer"])]
     )
@@ -655,7 +658,6 @@ async def generate_response(uid, persist_directory, rfe, markup):
     space_url = ""
 
     if markup and markup_check:
-        ai_answer = result["answer"].strip()
         if "pdf" in source:
             await highlight_text_in_pdf(
                                         f"./docs/{source}",
