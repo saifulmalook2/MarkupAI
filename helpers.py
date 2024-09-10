@@ -291,7 +291,7 @@ async def image_loader(image_file):
 
     # Call the Azure OpenAI API
     try:
-        response_ai = await client.chat.completions.create(
+        response_ai = client.chat.completions.create(
             model="gpt-4o",  # Use the correct model deployed in your Azure instance
             response_format={"type": "json_object"},
             messages=[
