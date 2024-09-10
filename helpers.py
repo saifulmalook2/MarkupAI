@@ -303,11 +303,13 @@ async def image_loader(image_file):
         
         print("RESPONSE AI", response_ai)
         # Parse the response from OpenAI
-        extracted_content = response_ai.choices[0].message.content
+        response_text = response_ai.choices[0].message.content.strip()
+        # Convert the string response to a Python dictionary
+        filtered_context = json.loads(response_text)
         
         # Convert extracted content into documents
         documents_with_content = []
-        for item in extracted_content:
+        for item in filtered_context['context']:
             doc = Document(
                 metadata={"source": image_file},  # or any other relevant metadata
                 page_content=item
@@ -504,7 +506,7 @@ def check_file_format(persist_directory: str):
 
     # Extract the file extension and return the corresponding value
     file_extension = Path(persist_directory).suffix.lower()
-    return file_format_output.get(file_extension, (4,2))
+    return file_format_output.get(file_extension, (1,5))
 
 async def create_chain(retriever, model):
     system_prompt = "You are an expert SOC2 Auditor. Your job is to provide answers relevant to the knowledge base provided.  Do not provide any information that is not explicitly contained in the documents retrieved.  Always give summarized answers using only the content from the retrieved documents.  If there is not any information in the documents, respond with 'Try rephrasing your question' . {context}"
