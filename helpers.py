@@ -154,34 +154,35 @@ async def highlight_text_in_csv(csv_file_path, xlsx_file_path, index_dict):
     print(f"CSV file has been written to {xlsx_file_path}")
 
 
+
 async def highlight_text_in_docx(docx_file, output_file, index_dict):
     doc = DocxDocument(docx_file)
-    group_num = list(index_dict.keys())
+    group_nums = sorted(index_dict.keys())  # Ensure keys are processed in order
 
-    for para_index in group_num:
-        ending_index = 3
-        starting_index = 0
-        if para_index != 0:
-            starting_index = para_index * 3
-            ending_index = starting_index + 3
+    for para_index in group_nums:
+        ending_index = para_index * 3 + 3
+        starting_index = para_index * 3
+
         for paragraph_index in range(starting_index, ending_index):
+            if paragraph_index >= len(doc.paragraphs): 
+                break
 
-            para_text = doc.paragraphs[paragraph_index].text
             paragraph = doc.paragraphs[paragraph_index]
+            para_text = paragraph.text
 
-            for q_text in index_dict[para_index]:
-                if q_text != "" and q_text in para_text:
-                    highlighted_text = f"{q_text}"
-
+            for q_text in index_dict.get(para_index, []):
+                if q_text and q_text in para_text:
                     print("highlighting", q_text)
-                    para_text = para_text.replace(q_text, highlighted_text)
+                    new_paragraph = doc.add_paragraph()
+                    run = new_paragraph.add_run(para_text.replace(q_text, f"{q_text}"))
+                    run.font.highlight_color = WD_COLOR_INDEX.YELLOW
 
-            paragraph.clear()  
-            paragraph.add_run(para_text).font.highlight_color = WD_COLOR_INDEX.YELLOW
+            # Remove the original paragraph if it was replaced
+            if para_text != paragraph.text:
+                paragraph.clear()  
+                paragraph.add_run(new_paragraph.text).font.highlight_color = WD_COLOR_INDEX.YELLOW
 
-               
     doc.save(output_file)
-    print(f"Highlighted document saved as {output_file}")
     print(f"Highlighted document saved as {output_file}")
 
 
