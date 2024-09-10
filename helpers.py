@@ -517,7 +517,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
     # Process chat with the created chain
     result = await process_chat(chain, rfe, chat_history[uid], persist_directory, threshold)
 
-    print("original")
+    print("original", result)
      
     result = await clean_content(result)
 
