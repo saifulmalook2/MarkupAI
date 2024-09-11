@@ -34,15 +34,12 @@ async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, file
     for _file in files:
         filename = _file.filename.replace(" ", "_")
         filename = f"{evidence_id}_{filename}" 
-        print("filename", filename)
         file_path = os.path.join(upload_folder, filename)
         filenames.append(filename)
         with open(file_path, "wb") as buffer:
             buffer.write(await _file.read())
-
         print(f"Saved file: {filename} at {file_path}")
-
-    print("temp docs", os.listdir("temp_docs"))
+        
     background_tasks.add_task(load_data, upload_folder)
 
     return {"Message": "Files Added"}
