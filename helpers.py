@@ -466,7 +466,7 @@ async def clean_content(response, source):
 
     Respond in similar JSON format.
     "answer" : "..."
-    "context" : [{'metadata': {'source': ..., 'page': ..., 'sheet': ...}, 'page_content': '...'},
+    "context" : [...], This is a list of dicts
     """
     system_prompt = system_prompt.format(user_question=user_question, source=source, answer=response['answer'])
     context_message = f"Here is the context to filter:\n{response['context']}"
