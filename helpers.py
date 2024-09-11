@@ -361,7 +361,13 @@ async def load_data(folder_path: str):
                 file_extension = pathlib.Path(file).suffix
 
                 if file_extension == ".pdf":
-                    raw_documents = PyPDFLoader(file, extract_images=True).load()
+                    try:
+                        # Try loading the PDF with images
+                        raw_documents = PyPDFLoader(file, extract_images=True).load()
+                    except ValueError as e:
+                        print(f"Failed to extract images from {file}: {e}")
+                        # If image extraction fails, load the PDF without images
+                        raw_documents = PyPDFLoader(file, extract_images=False).load()
                     all_documents.extend(raw_documents)
 
 
