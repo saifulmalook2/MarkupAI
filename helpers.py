@@ -384,14 +384,20 @@ async def load_data(folder_path: str):
                     raw_documents = await image_loader(file, space_url)
                     all_documents.extend(raw_documents)
 
-                print("filename", filename)
+                print("filename:", filename)
                 os.makedirs("docs", exist_ok=True)
+
+                # Ensure source file exists before copying
                 source_file = os.path.join("temp_docs", filename)
                 destination_file = os.path.join("docs", filename)
 
-                print("source n dest", source_file, destination_file)
-                print("list", os.listdir("temp_docs"))
-                shutil.copy(source_file, destination_file)
+                if os.path.exists(source_file):
+                    print("Copying file:", source_file, "to", destination_file)
+                    shutil.copy(source_file, destination_file)
+                else:
+                    print(f"Failed to process {filename}: Source file not found.")
+
+                print("Current temp_docs contents:", os.listdir("temp_docs"))
 
                 # delete_all_in_dir("temp_docs")
             except Exception as e:
