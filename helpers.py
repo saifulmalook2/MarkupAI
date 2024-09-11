@@ -35,7 +35,7 @@ from openai import AzureOpenAI
 import base64
 
 
-def upload_to_space(origin, output, region_name='nyc3'):
+def upload_to_space(origin, output,remove, region_name='nyc3'):
 
     client = boto3.client(
         's3',
@@ -49,7 +49,8 @@ def upload_to_space(origin, output, region_name='nyc3'):
         client.upload_file(origin, "annotated-files", f"{output}", ExtraArgs={'ACL': 'public-read'})
         public_url = f'https://annotated-files.nyc3.digitaloceanspaces.com/annotated-files/{output}'
 
-        os.remove(origin)
+        if remove:
+            os.remove(origin)
         return public_url
     
     except Exception as e:
@@ -380,26 +381,16 @@ async def load_data(folder_path: str):
                     all_documents.extend(raw_documents)
 
                 elif file_extension in [".jpg", ".jpeg", ".png"]:                    
-                    space_url = upload_to_space(file, file)
+                    space_url = upload_to_space(file, file, False)
                     raw_documents = await image_loader(file, space_url)
                     all_documents.extend(raw_documents)
 
-                print("filename:", filename)
                 os.makedirs("docs", exist_ok=True)
-
-                # Ensure source file exists before copying
                 source_file = os.path.join("temp_docs", filename)
                 destination_file = os.path.join("docs", filename)
-
-                if os.path.exists(source_file):
-                    print("Copying file:", source_file, "to", destination_file)
-                    shutil.copy(source_file, destination_file)
-                else:
-                    print(f"Failed to process {filename}: Source file not found.")
-
-                print("Current temp_docs contents:", os.listdir("temp_docs"))
-
-                # delete_all_in_dir("temp_docs")
+                shutil.copy(source_file, destination_file)
+                delete_all_in_dir("temp_docs")
+                
             except Exception as e:
                 print(f"Failed to process {filename}: {e}")
 
@@ -665,7 +656,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                             )    
 
                 space_file_path = f"annotated_{source}"
-                space_url = upload_to_space("out.pdf", space_file_path)
+                space_url = upload_to_space("out.pdf", space_file_path, True)
 
             elif "xlsx" in source:
                 await highlight_text_in_xlsx(
@@ -674,7 +665,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                             page_contents
                                             )
                 space_file_path = f"annotated_{source}"
-                space_url = upload_to_space("out.xlsx", space_file_path)
+                space_url = upload_to_space("out.xlsx", space_file_path, True)
 
             elif "csv" in source:
                 await highlight_text_in_csv(
@@ -684,7 +675,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                             )
                 space_file_path = f"annotated_{source}"
                 space_file_path = space_file_path.replace("csv", "xlsx")
-                space_url = upload_to_space("out.xlsx", space_file_path)
+                space_url = upload_to_space("out.xlsx", space_file_path, True)
 
             elif "docx" in source:
                 await highlight_text_in_docx(
@@ -693,7 +684,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                             page_contents
                                             )
                 space_file_path = f"annotated_{source}"
-                space_url = upload_to_space("out.docx", space_file_path)
+                space_url = upload_to_space("out.docx", space_file_path, True)
             
         # if not markup_check:
         #     ai_answer = "Your question is not relevant to the evidence"
