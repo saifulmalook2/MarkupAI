@@ -459,19 +459,17 @@ async def clean_content(response, source):
     system_prompt = """
     Your task is to filter irrelevant content based on the provided question or answer:
     Question & Answer: {user_question}.
-    
     Please return only the contexts that are relevant to this question or answer.
-    
     Also if the source mentioned in the context is not the same as '{source}' then 
-    answer should be equal to 'This is not relevant' 
-    if the source mentioned in the context is the same as '{source}' the  answer should be equal to '' empty string
+    answer should be equal to 'This is not relevant to the evidence' 
+    if the source mentioned in the context is the same as '{source}' the answer should be equal to '{answer}'
     Respond in similar JSON format.
     "answer" : "..."
     "context" : [...]
     """
 
     # Format the system prompt
-    system_prompt = system_prompt.format(user_question=user_question, source=source)
+    system_prompt = system_prompt.format(user_question=user_question, source=source, answer=response['answer'])
 
     # Prepare the user message containing the context
     context_message = f"Here is the context to filter:\n{response['context']}"
@@ -487,7 +485,7 @@ async def clean_content(response, source):
             ]
         )
 
-        print(response_ai)
+        print("gpt response", response_ai)
 
         # Parse the response from the API and return the filtered context
         response_text = response_ai.choices[0].message.content.strip()
@@ -543,19 +541,13 @@ async def create_chain(retriever, model):
         llm=model, retriever=retriever, prompt=retriever_prompt
     )
 
-
-    print("system prompt", system_prompt)
-    print("main prompt", main_prompt)
-
     return create_retrieval_chain(history_aware_retriever, chain)
 
 
 async def process_chat(chain, question, chat_history, dir, threshold):
     # Invoke the chain with input question and chat history
     response = chain.invoke({"input": question, "chat_history": chat_history})
-    
 
-    # print(response)
     answer = response['answer']
 
     final_response ={
@@ -567,7 +559,7 @@ async def process_chat(chain, question, chat_history, dir, threshold):
     for docs in response["context"]:
         score = docs.metadata['@search.score']
         metadata_dict = docs.metadata["metadata"]
-        print("got", score)
+        print("got", score, "threshold", threshold)
         if score >= threshold and metadata_dict['source'] == dir:
             print("matched", score)
             custom_data = {"metadata" : metadata_dict, "page_content" : docs.page_content}
@@ -600,8 +592,6 @@ async def generate_response(uid, persist_directory, rfe, markup):
         azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
         api_key=os.getenv("AZURE_OPENAI_API_KEY"),
     )
-    print("got chat")
-
     # Create chain with Azure Cognitive Search retriever and model
     chain = await create_chain(retriever, model)
 
@@ -609,10 +599,12 @@ async def generate_response(uid, persist_directory, rfe, markup):
     result = await process_chat(chain, rfe, chat_history[uid], persist_directory, threshold)
 
     print("original", result)
+    print("original context", result["context"])
      
     result = await clean_content(result, persist_directory)
 
     print("filtered",result)
+    print("filtered context", result["context"])
     
     ai_answer = result["answer"].strip()
 
@@ -647,11 +639,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
                 page = int(doc_details['metadata'].get('page'))
                 page_contents[page] = doc_details["page_content"].split("\n")
             else:
-                page = 0
-        # page = doc_details['metadata'].get('page') or doc_details['metadata'].get('page_name')
-
-        # page_contents.setdefault(page, lines)
-        
+                page = 0        
 
         pages.add(page)
     
@@ -665,9 +653,8 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                         page_contents,
                                         )    
 
-            space_file_path = f"{uuid.uuid4()}.pdf"
+            space_file_path = f"annotated_{source}.pdf"
             space_url = upload_to_space("out.pdf", space_file_path)
-            print(space_url)
 
         elif "xlsx" in source:
             await highlight_text_in_xlsx(
@@ -675,9 +662,8 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                         "out.xlsx", 
                                         page_contents
                                         )
-            space_file_path = f"{uuid.uuid4()}.xlsx"
+            space_file_path = f"annotated_{source}.xlsx"
             space_url = upload_to_space("out.xlsx", space_file_path)
-            print(space_url)
 
         elif "csv" in source:
             await highlight_text_in_csv(
@@ -685,9 +671,8 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                         "out.xlsx",
                                         page_contents
                                         )
-            space_file_path = f"{uuid.uuid4()}.xlsx"
+            space_file_path = f"annotated_{source}.xlsx"
             space_url = upload_to_space("out.xlsx", space_file_path)
-            print(space_url)
 
         elif "docx" in source:
             await highlight_text_in_docx(
@@ -695,9 +680,8 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                         "out.docx",
                                         page_contents
                                         )
-            space_file_path = f"{uuid.uuid4()}.docx"
+            space_file_path = f"annotated_{source}.docx"
             space_url = upload_to_space("out.docx", space_file_path)
-            print(space_url)
         
     if not markup_check:
         ai_answer = "Your question is not relevant to the evidence"
@@ -707,7 +691,6 @@ async def generate_response(uid, persist_directory, rfe, markup):
         "Source": source,
         "Pages/Rows" : pages,
         "Annotated_file" : space_url
-        # pdf file will be returned as well after deployment
         }
 
 
