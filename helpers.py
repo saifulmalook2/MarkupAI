@@ -454,44 +454,35 @@ async def clean_content(response, source):
         )
 
     user_question = f"Is this content relevant to the following question: {response['input']}, or answer: {response['answer']}?"
-    
-    # System prompt for OpenAI
     system_prompt = """
     Your task is to filter irrelevant content based on the provided question or answer:
     Question & Answer: {user_question}.
     Please return only the contexts that are relevant to this question or answer.
     Also if the source mentioned in the context is not the same as '{source}' then 
-    answer should be equal to 'This is not relevant to the evidence' 
+    answer should be equal to 'Your question is not relevant to the evidence' 
     if the source mentioned in the context is the same as '{source}' the answer should be equal to '{answer}'
     Respond in similar JSON format.
     "answer" : "..."
     "context" : [...]
     """
-
-    # Format the system prompt
     system_prompt = system_prompt.format(user_question=user_question, source=source, answer=response['answer'])
-
-    # Prepare the user message containing the context
     context_message = f"Here is the context to filter:\n{response['context']}"
-
-    # Call the Azure OpenAI API
     try:
         response_ai = client.chat.completions.create(
-            model="gpt-4o",  # Use the correct model deployed in your Azure instance
+            model="gpt-4o", 
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": context_message}
             ]
         )
-
-        print("gpt response", response_ai)
-
-        # Parse the response from the API and return the filtered context
         response_text = response_ai.choices[0].message.content.strip()
-        # Convert the string response to a Python dictionary
-        filtered_context = json.loads(response_text)
-        response['context'] = filtered_context['context']
+        filtered_response = json.loads(response_text)
+        print("filtered response" , filtered_response)
+        response['context'] = filtered_response['context']
+        if filtered_response["answer"] != response["answer"]:
+            response["answer"] = filtered_response["answer"]
+
         return response
 
     except Exception as e:
@@ -559,9 +550,9 @@ async def process_chat(chain, question, chat_history, dir, threshold):
     for docs in response["context"]:
         score = docs.metadata['@search.score']
         metadata_dict = docs.metadata["metadata"]
-        print("got", score, "threshold", threshold)
+        # print("got", score, "threshold", threshold)
         if score >= threshold and metadata_dict['source'] == dir:
-            print("matched", score)
+            # print("matched", score)
             custom_data = {"metadata" : metadata_dict, "page_content" : docs.page_content}
             final_response['context'].append(custom_data)
 
@@ -683,8 +674,8 @@ async def generate_response(uid, persist_directory, rfe, markup):
             space_file_path = f"annotated_{source}.docx"
             space_url = upload_to_space("out.docx", space_file_path)
         
-    if not markup_check:
-        ai_answer = "Your question is not relevant to the evidence"
+    # if not markup_check:
+    #     ai_answer = "Your question is not relevant to the evidence"
 
     return {
         "AI_message": ai_answer,
