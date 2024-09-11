@@ -295,6 +295,7 @@ async def image_loader(image_file, image_url):
 
     # Call the Azure OpenAI API
     try:
+        base_name = os.path.basename(image_file)
         response_ai = client.chat.completions.create(
             model="gpt-4o",
             response_format={"type": "json_object"},
@@ -314,12 +315,12 @@ async def image_loader(image_file, image_url):
         documents_with_content = []
         for item in filtered_context.get('content', []):
             doc = Document(
-                metadata={"source": image_file},
+                metadata={"source": base_name},
                 page_content=item
             )
             documents_with_content.append(doc)
 
-        print(f"Processed image: {image_file}")
+        print(f"Processed image: {image_file} {base_name}")
         print(f"Generated {documents_with_content} observations")
 
         return documents_with_content
@@ -389,8 +390,9 @@ async def load_data(folder_path: str):
                 destination_file = os.path.join("docs", filename)
 
                 print("source n dest", source_file, destination_file)
+                print("list", os.listdir("temp_docs"))
                 shutil.copy(source_file, destination_file)
-                
+
                 # delete_all_in_dir("temp_docs")
             except Exception as e:
                 print(f"Failed to process {filename}: {e}")
