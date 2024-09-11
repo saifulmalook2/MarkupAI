@@ -272,55 +272,61 @@ async def image_loader(image_file, image_url):
         azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT")
     )
 
-    # System prompt for OpenAI
+    # Improved system prompt for OpenAI
     system_prompt = """
-    Your task is to extract the content from the provided image by telling me what is in the image.
-    Such as what is in the image and all the text etc, basically each and every detail.
-    Also whatever is in the image explain it in detail, it does not just need to be a text, 
-    It can be an image of anything.
-    
-    Please extract any relevant text from the image and return it in a structured format.
-    
-    Respond in JSON list of texts:
-    "content" : [text1, text2, ...]
+    You are an advanced image analysis AI. Your task is to provide a detailed analysis of the given image.
+    Focus on the following aspects:
+    1. Main subjects or objects in the image
+    2. Actions or activities taking place
+    3. Setting or environment
+    4. Colors and visual style
+    5. Any text visible in the image
+    6. Any unique or notable features
+
+    Provide your analysis as a list of detailed observations. Each observation should be a separate string.
+    Your response should be in JSON format with only one key:
+    "content": [observation1, observation2, ...]
+
+    Be thorough in your analysis but avoid speculation. If you're unsure about something, indicate that in your response.
+    Aim for 10-20 detailed observations, depending on the complexity of the image.
     """
 
-    # Prepare the user message containing the image data
-    image_message = f"![image]({image_url})"
+    image_message = f"Analyze this image in detail: ![image]({image_url})"
 
     # Call the Azure OpenAI API
     try:
         response_ai = client.chat.completions.create(
-            model="gpt-4o",  # Use the correct model deployed in your Azure instance
+            model="gpt-4o",
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": image_message}
-            ]
+            ],
+            max_tokens=500,
+            temperature=0.7
         )
         
         # Parse the response from OpenAI
         response_text = response_ai.choices[0].message.content.strip()
-        # Convert the string response to a Python dictionary
         filtered_context = json.loads(response_text)
         
         # Convert extracted content into documents
         documents_with_content = []
-        for item in filtered_context['content']:
+        for item in filtered_context.get('content', []):
             doc = Document(
-                metadata={"source": image_file},  # or any other relevant metadata
+                metadata={"source": image_file},
                 page_content=item
             )
             documents_with_content.append(doc)
-        print("RESPONSE AI", response_ai)
+
+        print(f"Processed image: {image_file}")
+        print(f"Generated {documents_with_content} observations")
 
         return documents_with_content
     
     except Exception as e:
-        print("Error processing image:", e)
+        print(f"Error processing image {image_file}: {str(e)}")
         return []
-
-
 
 
 def delete_all_in_dir(directory):
@@ -372,9 +378,7 @@ async def load_data(folder_path: str):
                     raw_documents = TextLoader(file).load()
                     all_documents.extend(raw_documents)
 
-                elif file_extension in [".jpg", ".jpeg", ".png"]:
-                    # raw_documents = UnstructuredImageLoader(file).load()
-                    
+                elif file_extension in [".jpg", ".jpeg", ".png"]:                    
                     space_url = upload_to_space(file, file)
                     raw_documents = await image_loader(file, space_url)
                     all_documents.extend(raw_documents)
@@ -505,6 +509,7 @@ def check_file_format(persist_directory: str):
     # Extract the file extension and return the corresponding value
     file_extension = Path(persist_directory).suffix.lower()
     return file_format_output.get(file_extension, (1,5))
+
 
 async def create_chain(retriever, model):
     system_prompt = "You are an expert SOC2 Auditor. Your job is to provide answers relevant to the knowledge base provided.  Do not provide any information that is not explicitly contained in the documents retrieved.  Always give summarized answers using only the content from the retrieved documents.  If there is not any information in the documents, respond with 'Try phrasing your question to be more specific to the evidence' or 'Your question is not relevant to the evidence' . {context}"
@@ -647,7 +652,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                             page_contents,
                                             )    
 
-                space_file_path = f"annotated_{source}.pdf"
+                space_file_path = f"annotated_{source}"
                 space_url = upload_to_space("out.pdf", space_file_path)
 
             elif "xlsx" in source:
@@ -656,7 +661,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                             "out.xlsx", 
                                             page_contents
                                             )
-                space_file_path = f"annotated_{source}.xlsx"
+                space_file_path = f"annotated_{source}"
                 space_url = upload_to_space("out.xlsx", space_file_path)
 
             elif "csv" in source:
@@ -665,7 +670,8 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                             "out.xlsx",
                                             page_contents
                                             )
-                space_file_path = f"annotated_{source}.xlsx"
+                space_file_path = f"annotated_{source}"
+                space_file_path = space_file_path.replace("csv", "xlsx")
                 space_url = upload_to_space("out.xlsx", space_file_path)
 
             elif "docx" in source:
@@ -674,7 +680,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                             "out.docx",
                                             page_contents
                                             )
-                space_file_path = f"annotated_{source}.docx"
+                space_file_path = f"annotated_{source}"
                 space_url = upload_to_space("out.docx", space_file_path)
             
         # if not markup_check:
