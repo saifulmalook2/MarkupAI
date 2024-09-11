@@ -461,9 +461,12 @@ async def clean_content(response, source):
     Also if the source mentioned in the context is not the same as '{source}' then 
     answer should be equal to 'Your question is not relevant to the evidence' 
     if the source mentioned in the context is the same as '{source}' the answer should be equal to '{answer}'
+
+    Maintain the format of the context as the original!
+
     Respond in similar JSON format.
     "answer" : "..."
-    "context" : [...]
+    "context" : [{'metadata': {'source': ..., 'page': ..., 'sheet': ...}, 'page_content': '...'},
     """
     system_prompt = system_prompt.format(user_question=user_question, source=source, answer=response['answer'])
     context_message = f"Here is the context to filter:\n{response['context']}"
