@@ -273,26 +273,29 @@ async def image_loader(image_file, image_url):
         azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT")
     )
 
-    # Improved system prompt for OpenAI
+    # Updated system prompt for document-focused analysis
     system_prompt = """
-    You are an advanced image analysis AI. Your task is to provide a detailed analysis of the given image.
-    Focus on the following aspects:
-    1. Main subjects or objects in the image
-    2. Actions or activities taking place
-    3. Setting or environment
-    4. Colors and visual style
-    5. Any text visible in the image
-    6. Any unique or notable features
+    You are an AI specialized in document analysis. Your task is to provide a strictly factual analysis of the given document image.
+    Focus solely on directly observable elements, with emphasis on:
+    1. Text content: Transcribe visible text accurately, preserving formatting where possible.
+    2. Document structure: Identify headers, paragraphs, lists, footnotes, etc.
+    3. Tables: Describe table structure and content concisely.
+    4. Diagrams or figures: Describe their presence, basic structure, and any labels.
 
-    Provide your analysis as a list of detailed observations. Each observation should be a separate string.
-    Your response should be in JSON format with only one key:
+    Provide your analysis as a list of concise, factual observations. Each observation should be a separate string.
+    Your response must be in JSON format with only one key:
     "content": [observation1, observation2, ...]
 
-    Be thorough in your analysis but avoid speculation. If you're unsure about something, indicate that in your response.
-    Aim for 10-20 detailed observations, depending on the complexity of the image.
+    Rules:
+    - Transcribe text exactly as it appears. Use [illegible] for unreadable text.
+    - For large blocks of text, summarize the content structure rather than transcribing everything.
+    - Describe diagrams and tables in terms of their structure and key components.
+    - Do not interpret or draw conclusions about the document's purpose or meaning.
+    - Use precise language.
+    - Aim for 5-20 observations, depending on the complexity of the document.
     """
 
-    image_message = f"Analyze this image in detail: ![image]({image_url})"
+    image_message = f"Provide a strictly factual analysis of this document image: ![image]({image_url})"
 
     # Call the Azure OpenAI API
     try:
@@ -304,8 +307,8 @@ async def image_loader(image_file, image_url):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": image_message}
             ],
-            max_tokens=500,
-            temperature=0.7
+            max_tokens=700,  
+            temperature=0.1  
         )
         
         # Parse the response from OpenAI
@@ -316,20 +319,19 @@ async def image_loader(image_file, image_url):
         documents_with_content = []
         for item in filtered_context.get('content', []):
             doc = Document(
-                metadata={"source": base_name},
+                metadata={"source": base_name, "sheet" : "", "page" : 0},
                 page_content=item
             )
             documents_with_content.append(doc)
 
-        print(f"Processed image: {image_file} {base_name}")
+        print(f"Processed document: {image_file} {base_name}")
         print(f"Generated {documents_with_content} observations")
 
         return documents_with_content
     
     except Exception as e:
-        print(f"Error processing image {image_file}: {str(e)}")
+        print(f"Error processing document {image_file}: {str(e)}")
         return []
-
 
 def delete_all_in_dir(directory):
     if os.path.exists(directory):
@@ -418,7 +420,7 @@ async def load_data(folder_path: str):
         print("db fetched")
 
         print("embeddings created")
-        
+
         for text in texts:
 
             if "id" not in text:
@@ -511,7 +513,7 @@ def check_file_format(persist_directory: str):
 
 
 async def create_chain(retriever, model):
-    system_prompt = "You are an expert SOC2 Auditor. Your job is to provide answers relevant to the knowledge base provided.  Do not provide any information that is not explicitly contained in the documents retrieved.  Always give summarized answers using only the content from the retrieved documents.  If there is not any information in the documents, respond with 'Try phrasing your question to be more specific to the evidence' or 'Your question is not relevant to the evidence' . {context}"
+    system_prompt = "You are an expert SOC2 Auditor. Your job is to provide answers relevant to the knowledge base provided.  Do not provide any information that is not explicitly contained in the documents retrieved.  Always give summarized answers using only the content from the retrieved documents.  If there is not any information in the documents, respond with 'Try phrasing your question to be more specific to the evidence' or 'Your question is not relevant to the evidence'. {context}"
     
     main_prompt = ChatPromptTemplate.from_messages(
         [
