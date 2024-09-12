@@ -26,10 +26,10 @@ async def root():
 
 @app.post("/upload_files/{evidence_id}")
 async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, files: List[UploadFile] = File(...)):
-    upload_folder = f"temp_docs"
+    upload_folder = f"docs"
     os.makedirs(upload_folder, exist_ok=True)
 
-    print("eveidence id", evidence_id)
+    print("attachment id", evidence_id)
     filenames = []
     for _file in files:
         filename = _file.filename.replace(" ", "_")

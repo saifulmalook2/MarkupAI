@@ -348,19 +348,19 @@ def delete_all_in_dir(directory):
         print(f"The directory {directory} does not exist.")
 
 
-async def load_data(filenames: str):
+async def load_data(filenames):
     print("Background task initiated")
     try:
         all_documents = []
 
-        files = os.path.join(os.getcwd(), "temp_docs")
+        files = os.path.join(os.getcwd(), "docs")
         for filename in filenames:
             try:
                 file = os.path.abspath(os.path.join(str(files), str(filename)))
                 print(f"Processing {file}")
                 file_extension = pathlib.Path(file).suffix
-
                 print("file extension", file_extension)
+
                 if file_extension == ".pdf":
                     try:
                         raw_documents = PyPDFLoader(file, extract_images=True).load()
@@ -391,11 +391,11 @@ async def load_data(filenames: str):
                     raw_documents = await image_loader(file, space_url)
                     all_documents.extend(raw_documents)
 
-                os.makedirs("docs", exist_ok=True)
-                source_file = os.path.join("temp_docs", filename)
-                destination_file = os.path.join("docs", filename)
-                shutil.copy(source_file, destination_file)
-                delete_all_in_dir("temp_docs")
+                # os.makedirs("docs", exist_ok=True)
+                # source_file = os.path.join("temp_docs", filename)
+                # destination_file = os.path.join("docs", filename)
+                # shutil.copy(source_file, destination_file)
+                # delete_all_in_dir("temp_docs")
 
             except Exception as e:
                 print(f"Failed to process {filename}: {e}")
