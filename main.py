@@ -56,7 +56,7 @@ async def upload_files(sid, data):
     files = data['files']
 
     await sio_server.emit('files_saved', {'msg': 'Files uploaded'}, room=sid)
-
+    await sio_server.sleep(0)
     upload_folder = f"docs"
     os.makedirs(upload_folder, exist_ok=True)
 
