@@ -54,6 +54,9 @@ async def disconnect(sid):
 async def upload_files(sid, data):
     evidence_id = data['evidence_id']
     files = data['files']
+
+    await sio_server.emit('files_saved', {'msg': 'Files uploaded'}, room=sid)
+
     upload_folder = f"docs"
     os.makedirs(upload_folder, exist_ok=True)
 
@@ -67,7 +70,6 @@ async def upload_files(sid, data):
             buffer.write(file['content'])
         logging.info(f"Saved file: {filename} at {file_path}")
 
-    await sio_server.emit('files_saved', {'msg': 'Files uploaded'}, room=sid)
 
     added_files = await load_data(filenames)
 
