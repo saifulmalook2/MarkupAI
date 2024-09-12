@@ -52,6 +52,8 @@ async def disconnect(sid):
 # ==============================SOCKET EVENT FOR FILE UPLOAD =========================
 @sio_server.event
 async def upload_files(sid, data):
+    logging.info("Got files")
+    
     evidence_id = data['evidence_id']
     files = data['files']
 
