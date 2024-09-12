@@ -4,90 +4,81 @@
 # Fix https://community.deeplearning.ai/t/try-filtering-complex-metadata-from-the-document-using-langchain-community-vectorstores-utils-filter-complex-metadata/628474/4
 
 import logging
-from fastapi import FastAPI,File, UploadFile, BackgroundTasks
+from fastapi import FastAPI,File, UploadFile, BackgroundTasks, Request, HTTPException, Depends
 from typing import List
 from pydantic import BaseModel
 from fastapi.encoders import jsonable_encoder 
 import os        
 from helpers import generate_response, load_data
 import socketio
+from cryptography.fernet import Fernet
 
 logging.basicConfig(format="%(levelname)s     %(message)s", level=logging.INFO)
+# hack to get rid of langchain logs
 httpx_logger = logging.getLogger("httpx")
 httpx_logger.setLevel(logging.WARNING)
-logging.getLogger("uvicorn").setLevel(logging.WARNING)  # Set uvicorn to warning level
-logging.getLogger("azure.core.pipeline.policies").setLevel(logging.WARNING)
 
-# Initialize FastAPI app
+key = os.getenv("SECRET_KEY")
+KEY = key.encode()
+cipher_suite = Fernet(KEY)
+
+
 app = FastAPI()
 
-# Initialize Socket.IO server
-sio_server = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins=[], transports=["websocket"])
-sio_app = socketio.ASGIApp(socketio_server=sio_server, socketio_path="/socket.io")
 
-connected_clients = set()
-
-# Mount Socket.IO app at /socket.io
-app.mount("/socket.io", sio_app)
-
+async def verify_request(request: Request):
+    headers = request.headers
+    auth_token = headers.get('Authorization') 
+    
+    if auth_token:
+        try:
+            token = auth_token.split(' ')[1]
+            logging.info(f'Authorization token: {token}')
+            
+            decrypted_token = cipher_suite.decrypt(token.encode()).decode()
+            
+            # Compare decrypted token with expected value
+            if decrypted_token != os.getenv("SECRET_TOKEN"):
+                raise HTTPException(status_code=403, detail="Invalid token")
+            else:
+                logging.info("Valid Token")
+                return
+        except Exception as e:
+            logging.error(f"Token decryption error: {e}")
+            raise HTTPException(status_code=403, detail="Invalid token")
+    else:
+        raise HTTPException(status_code=400, detail="Authorization token missing")
+    
 
 @app.get("/")
 async def root():
     return {"msg": "OK"}
 
-# Socket.IO event handlers
-@sio_server.event
-async def connect(sid, environ):
-    connected_clients.add(sid)
-    logging.info(f"Client {sid} connected")
-    await sio_server.emit('message', {'data': 'Connected'}, room=sid)
 
-@sio_server.event
-async def disconnect(sid):
-    connected_clients.remove(sid)
-    logging.info(f"Client {sid} disconnected")
+@app.post("/test/{evidence_id}")
+async def upload_files(evidence_id: str, headers: dict = Depends(verify_request)):
+    logging.info(f"valid toek {evidence_id}")
+    return "yess"
 
-
-
-# ==============================SOCKET EVENT FOR FILE UPLOAD =========================
-
-
-@sio_server.event
-async def testing(sid, data):
-    logging.info(f"the data was recieved {sid} {data}")
-    await sio_server.emit('files_saved', {'msg': 'Files uploaded'}, room=sid)
-
-
-
-@sio_server.event
-async def upload_files(sid, data):
-    logging.info("Got files")
-
-    evidence_id = data['evidence_id']
-    files = data['files']
-
-    await sio_server.emit('files_saved', {'msg': 'Files uploaded'}, room=sid)
-    
+@app.post("/upload_files/{evidence_id}")
+async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, files: List[UploadFile] = File(...), headers: dict = Depends(verify_request)):
     upload_folder = f"docs"
     os.makedirs(upload_folder, exist_ok=True)
 
+    print("attachment id", evidence_id)
     filenames = []
-    for file in files:
-        filename = file['filename'].replace(" ", "_")
-        filename = f"{evidence_id}_{filename}"
+    for _file in files:
+        filename = _file.filename.replace(" ", "_")
+        filename = f"{evidence_id}_{filename}" 
         file_path = os.path.join(upload_folder, filename)
         filenames.append(filename)
         with open(file_path, "wb") as buffer:
-            buffer.write(file['content'])
-        logging.info(f"Saved file: {filename} at {file_path}")
+            buffer.write(await _file.read())
+        print(f"Saved file: {filename} at {file_path}")
+        
+    background_tasks.add_task(load_data, filenames)
 
-
-    added_files = await load_data(filenames)
-
-    if added_files:
-        await sio_server.emit('processing_complete', {"status" : "Success", 'files': filenames, "attachment_id" : evidence_id, "saved_name" : added_files}, room=sid)
-    else:
-        await sio_server.emit('processing_complete', {"status" : "Failed", 'files': None, "attachment_id" : None}, room=sid)
+    return {"Message": "Files Added"}
 
 
 class ProjectManagmentUpload(BaseModel):
@@ -95,6 +86,7 @@ class ProjectManagmentUpload(BaseModel):
     auditor_rfe: str
     name : str
     markup: bool
+
 
 @app.post("/project-management/analyze-upload/{evidence_id}")
 async def project_management_upload(evidence_id:str, data: ProjectManagmentUpload):
@@ -106,7 +98,11 @@ async def project_management_upload(evidence_id:str, data: ProjectManagmentUploa
     markup = data_doc['markup']
     file_name = f"{evidence_id}_{name}"
 
-    logging.info(f"filename {file_name}")
+
+    print("file name", file_name)
+    print("evidence id", evidence_id)
+    print("original filename", name)
+
     user_id = f"{uid}-{evidence_id}"
     response = await generate_response(user_id, file_name, rfe, markup)
     return response
