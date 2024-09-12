@@ -39,13 +39,13 @@ async def root():
 @sio_server.event
 async def connect(sid, environ):
     connected_clients.add(sid)
-    print(f"Client {sid} connected")
+    logging.info(f"Client {sid} connected")
     await sio_server.emit('message', {'data': 'Connected'}, room=sid)
 
 @sio_server.event
 async def disconnect(sid):
     connected_clients.remove(sid)
-    print(f"Client {sid} disconnected")
+    logging.info(f"Client {sid} disconnected")
 
 
 
@@ -57,7 +57,6 @@ async def upload_files(sid, data):
     upload_folder = f"docs"
     os.makedirs(upload_folder, exist_ok=True)
 
-    print("attachment id", evidence_id)
     filenames = []
     for file in files:
         filename = file['filename'].replace(" ", "_")
@@ -66,7 +65,7 @@ async def upload_files(sid, data):
         filenames.append(filename)
         with open(file_path, "wb") as buffer:
             buffer.write(file['content'])
-        print(f"Saved file: {filename} at {file_path}")
+        logging.info(f"Saved file: {filename} at {file_path}")
 
     await sio_server.emit('files_saved', {'msg': 'Files uploaded'}, room=sid)
 
@@ -94,11 +93,7 @@ async def project_management_upload(evidence_id:str, data: ProjectManagmentUploa
     markup = data_doc['markup']
     file_name = f"{evidence_id}_{name}"
 
-
-    print("file name", file_name)
-    print("evidence id", evidence_id)
-    print("original filename", name)
-
+    logging.info(f"filename {file_name}")
     user_id = f"{uid}-{evidence_id}"
     response = await generate_response(user_id, file_name, rfe, markup)
     return response

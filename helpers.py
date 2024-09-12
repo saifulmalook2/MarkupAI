@@ -59,7 +59,7 @@ async def upload_to_space(origin, output,remove, region_name='nyc3'):
         return public_url
     
     except Exception as e:
-        print("error while placing file in bucket", e)
+        logging.info("error while placing file in bucket", e)
         return None
 
 
@@ -82,13 +82,12 @@ async def highlight_text_in_pdf(input_path, output_path, page_contents):
     try:
         for page_num, text_list in page_contents.items():
             if page_num >= len(doc) + 1 or page_num < 0:
-                print(f"Page number {page_num} is out of range.")
+                logging.info(f"Page number {page_num} is out of range.")
                 continue
 
             page = doc[page_num - 1]
             for l in text_list:
                 if l.strip():
-                    print("to highlight",l)
                     text_instances = page.search_for(l)
                     if text_instances:
                         for inst in text_instances:
@@ -106,7 +105,7 @@ async def highlight_text_in_pdf(input_path, output_path, page_contents):
         doc.close()
         
     except Exception as e:
-        print("Error while marking PDF", e)
+        logging.info("Error while marking PDF", e)
 
 
 async def highlight_text_in_xlsx(input_path, output_path, page_contents):
@@ -114,7 +113,6 @@ async def highlight_text_in_xlsx(input_path, output_path, page_contents):
     for page_num, details in page_contents.items():
         sheet_name = details['sheet']
         texts_to_highlight = details['text']
-        print("sheet", sheet_name, texts_to_highlight)
 
         if sheet_name in workbook.sheetnames:
             sheet = workbook[sheet_name]
@@ -122,7 +120,6 @@ async def highlight_text_in_xlsx(input_path, output_path, page_contents):
             for cell in row:
                 for text in texts_to_highlight:
                     if text not in ["", "nan"] and text.strip() == (str(cell.value)).strip():
-                        print("match")
                         cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
 
     workbook.save(output_path)
@@ -158,7 +155,7 @@ async def highlight_text_in_csv(csv_file_path, xlsx_file_path, index_dict):
 
     wb.save(xlsx_file_path)
 
-    print(f"CSV file has been written to {xlsx_file_path}")
+    logging.info(f"CSV file has been written to {xlsx_file_path}")
 
 
 
@@ -208,7 +205,7 @@ async def highlight_text_in_docx(docx_file, output_file, index_dict):
 
     # Save the document with highlighted text
     doc.save(output_file)
-    print(f"Highlighted document saved as {output_file}")
+    logging.info(f"Highlighted document saved as {output_file}")
 
 
 async def docx_loader(file):
@@ -243,7 +240,7 @@ async def docx_loader(file):
                                 )
         documents_with_paragraphs.append(doc_with_group)
 
-    print("Loaded documents from all paragraph groups:", len(documents_with_paragraphs))
+    logging.info(f"Loaded documents from all paragraph groups: {len(documents_with_paragraphs)}")
     return documents_with_paragraphs
 
 
@@ -265,7 +262,7 @@ async def excel_loader(file):
             )
             documents_with_rows.append(doc_with_row)
     
-    print("Loaded documents from all sheets with row and column numbers:", len(documents_with_rows))
+    logging.info(f"Loaded documents from all sheets with row and column numbers: {len(documents_with_rows)}")
     return documents_with_rows
 
 
@@ -329,18 +326,16 @@ async def image_loader(image_file, image_url):
             )
             documents_with_content.append(doc)
 
-        print(f"Processed document: {image_file} {base_name}")
-        print(f"Generated {documents_with_content} observations")
 
         return documents_with_content
     
     except Exception as e:
-        print(f"Error processing document {image_file}: {str(e)}")
+        logging.info(f"Error processing document {image_file}: {str(e)}")
         return []
 
 
 async def load_data(filenames):
-    print("Background task initiated")
+    logging.info("Background task initiated")
     try:
         all_documents = []
 
@@ -348,19 +343,19 @@ async def load_data(filenames):
         for filename in filenames:
             try:
                 file = os.path.abspath(os.path.join(str(files), str(filename)))
-                print(f"Processing {file}")
+                logging.info(f"Processing {file}")
                 file_extension = pathlib.Path(file).suffix
 
                 if file_extension == ".pdf":
                     try:
                         raw_documents = PyPDFLoader(file, extract_images=True).load()
                     except ValueError as e:
-                        print(f"Failed to extract images from {file}: {e}")
+                        logging.info(f"Failed to extract images from {file}: {e}")
                         raw_documents = PyPDFLoader(file, extract_images=False).load()
                     all_documents.extend(raw_documents)
 
                 elif file_extension == ".xlsx":
-                    print("Loading")
+                    logging.info("Loading")
                     raw_documents = await excel_loader(file)
                     all_documents.extend(raw_documents)
 
@@ -382,14 +377,14 @@ async def load_data(filenames):
                     all_documents.extend(raw_documents)
 
             except Exception as e:
-                print(f"Failed to process {filename}: {e}")
+                logging.info(f"Failed to process {filename}: {e}")
 
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=300, chunk_overlap=50
         )
         texts = text_splitter.split_documents(all_documents)
 
-        print("split")
+        logging.info("split")
         embedding = AzureOpenAIEmbeddings(
             model="text-embedding-ada-002",
             azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS"),
@@ -397,7 +392,7 @@ async def load_data(filenames):
             api_key=os.getenv("AZURE_OPENAI_API_KEY_EMBEDDINGS"),
         )  
 
-        print("embeddings fetched")
+        logging.info("embeddings fetched")
         vectordb = AzureSearch(
                 azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
                 azure_search_key=os.getenv("AZURE_SEARCH_KEY"),
@@ -405,9 +400,9 @@ async def load_data(filenames):
                 embedding_function=embedding.embed_query,
             )
         
-        print("db fetched")
+        logging.info("db fetched")
 
-        print("embeddings created")
+        logging.info("embeddings created")
 
         for text in texts:
 
@@ -424,15 +419,15 @@ async def load_data(filenames):
             if "sheet" not in text.metadata:
                 text.metadata["sheet"] = ""
 
-        print(texts[0])
+        logging.info(texts[0])
         await vectordb.aadd_documents(documents=texts)
 
-        print("Files Added")
+        logging.info("Files Added")
 
         return filenames
 
     except Exception as e:
-        print(f"Error in load_data: {e}")
+        logging.info(f"Error in load_data: {e}")
         return False
 
 
@@ -477,7 +472,7 @@ async def clean_content(response, source):
         )
         response_text = response_ai.choices[0].message.content.strip()
         filtered_response = json.loads(response_text)
-        print("filtered response" , filtered_response)
+        logging.info(f"filtered response {filtered_response}")
         response['context'] = filtered_response['context']
         if filtered_response["answer"] != response["answer"]:
             response["answer"] = filtered_response["answer"]
@@ -485,7 +480,7 @@ async def clean_content(response, source):
         return response
 
     except Exception as e:
-        print(f"Passing context as is due to Error: {e}")
+        logging.info(f"Passing context as is due to Error: {e}")
         return response
 
 
@@ -589,13 +584,13 @@ async def generate_response(uid, persist_directory, rfe, markup):
         # Process chat with the created chain
         result = await process_chat(chain, rfe, chat_history[uid], persist_directory, threshold)
 
-        print("original answer",result["answer"])
-        print("original context", result["context"])
+        logging.info(f"original answer {result["answer"]}")
+        logging.info(f"original context {result["context"]}")
         
         result = await clean_content(result, persist_directory)
 
-        print("filtered answer",result["answer"])
-        print("filtered context", result["context"])
+        logging.info(f"filtered answer {result["answer"]}")
+        logging.info(f"filtered context {result["context"]}")
         
         ai_answer = result["answer"].strip()
 
@@ -683,7 +678,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
             }
     
     except Exception as e:
-        print("Error occured", e)
+        logging.info(f"Error occured {e}")
 
         return {
             "AI_message": "There was an issue while fetching information",
