@@ -34,12 +34,21 @@ app.mount("/socket.io", sio_app)
 async def root():
     return {"msg": "OK"}
 
+# Socket.IO event handlers
+@sio_server.event
+async def connect(sid, environ):
+    connected_clients.add(sid)
+    print(f"Client {sid} connected")
+    await sio_server.emit('message', {'data': 'Connected'}, room=sid)
+
+@sio_server.event
+async def disconnect(sid):
+    connected_clients.remove(sid)
+    print(f"Client {sid} disconnected")
 
 
-
-
-
-# ================================================
+    
+# ==============================SOCKET EVENT FOR FILE UPLOAD =========================
 @app.post("/upload_files/{evidence_id}")
 async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, files: List[UploadFile] = File(...)):
     upload_folder = f"docs"
