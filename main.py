@@ -56,6 +56,8 @@ async def upload_files(sid, data):
     os.makedirs(upload_folder, exist_ok=True)
 
     print("attachment id", evidence_id)
+    await sio_server.emit('saving_files', {'msg': 'Files saving'}, room=sid)
+
     filenames = []
     for file in files:
         filename = file['filename'].replace(" ", "_")
@@ -66,21 +68,13 @@ async def upload_files(sid, data):
             buffer.write(file['content'])
         print(f"Saved file: {filename} at {file_path}")
 
-    await sio_server.emit('files_saved', {'msg': 'Files uploaded'}, room=sid)
-    background_tasks = BackgroundTasks()
-    background_tasks.add_task(load_data_background, filenames, evidence_id, sid)
 
-    # Trigger the background task
-    await background_tasks()
-
-async def load_data_background(filenames,evidence_id, sid):
     added_files = await load_data(filenames)
 
     if added_files:
-        await sio_server.emit('processing_complete', {'files': filenames, "attachment_id": evidence_id, "saved_name": added_files}, room=sid)
+        await sio_server.emit('processing_complete', {'files': filenames, "attachment_id" : evidence_id, "saved_name" : added_files}, room=sid)
     else:
-        await sio_server.emit('processing_complete', {'files': None, "attachment_id": None}, room=sid)
-
+        await sio_server.emit('processing_complete', {'files': None, "attachment_id" : None}, room=sid)
 
 
 class ProjectManagmentUpload(BaseModel):
