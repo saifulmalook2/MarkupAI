@@ -58,13 +58,13 @@ async def upload_files(sid, data):
 
     print("attachment id", evidence_id)
     filenames = []
-    for _file in files:
-        filename = _file.filename.replace(" ", "_")
-        filename = f"{evidence_id}_{filename}" 
+    for file in files:
+        filename = file['filename'].replace(" ", "_")
+        filename = f"{evidence_id}_{filename}"
         file_path = os.path.join(upload_folder, filename)
         filenames.append(filename)
         with open(file_path, "wb") as buffer:
-            buffer.write(await _file.read())
+            buffer.write(file['content'])
         print(f"Saved file: {filename} at {file_path}")
         
     await sio_server.emit('files_saved', {'msg': 'Files uploaded'}, room=sid)
