@@ -74,9 +74,9 @@ async def upload_files(sid, data):
     added_files = await load_data(filenames)
 
     if added_files:
-        await sio_server.emit('processing_complete', {'files': filenames, "attachment_id" : evidence_id, "saved_name" : added_files}, room=sid)
+        await sio_server.emit('processing_complete', {"status" : "Success", 'files': filenames, "attachment_id" : evidence_id, "saved_name" : added_files}, room=sid)
     else:
-        await sio_server.emit('processing_complete', {'files': None, "attachment_id" : None}, room=sid)
+        await sio_server.emit('processing_complete', {"status" : "Failed", 'files': None, "attachment_id" : None}, room=sid)
 
 
 class ProjectManagmentUpload(BaseModel):
