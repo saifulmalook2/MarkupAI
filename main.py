@@ -67,13 +67,20 @@ async def upload_files(sid, data):
         print(f"Saved file: {filename} at {file_path}")
 
     await sio_server.emit('files_saved', {'msg': 'Files uploaded'}, room=sid)
+    background_tasks = BackgroundTasks()
+    background_tasks.add_task(load_data_background, filenames, evidence_id, sid)
 
-    # added_files = await load_data(filenames)
+    # Trigger the background task
+    await background_tasks()
 
-    # if added_files:
-    #     await sio_server.emit('processing_complete', {'files': filenames, "attachment_id" : evidence_id, "saved_name" : added_files}, room=sid)
-    # else:
-    #     await sio_server.emit('processing_complete', {'files': None, "attachment_id" : None}, room=sid)
+async def load_data_background(filenames,evidence_id, sid):
+    added_files = await load_data(filenames)
+
+    if added_files:
+        await sio_server.emit('processing_complete', {'files': filenames, "attachment_id": evidence_id, "saved_name": added_files}, room=sid)
+    else:
+        await sio_server.emit('processing_complete', {'files': None, "attachment_id": None}, room=sid)
+
 
 
 class ProjectManagmentUpload(BaseModel):
