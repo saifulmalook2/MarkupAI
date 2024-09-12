@@ -10,20 +10,36 @@ from pydantic import BaseModel
 from fastapi.encoders import jsonable_encoder 
 import os        
 from helpers import generate_response, load_data
+import socketio
+
 
 logging.basicConfig(format="%(levelname)s     %(message)s", level=logging.INFO)
-# hack to get rid of langchain logs
 httpx_logger = logging.getLogger("httpx")
 httpx_logger.setLevel(logging.WARNING)
 
-
+# Initialize FastAPI app
 app = FastAPI()
+
+# Initialize Socket.IO server
+sio_server = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins=[], transports=["websocket"])
+sio_app = socketio.ASGIApp(socketio_server=sio_server, socketio_path="/socket.io")
+
+connected_clients = set()
+
+# Mount Socket.IO app at /socket.io
+app.mount("/socket.io", sio_app)
+
 
 @app.get("/")
 async def root():
     return {"msg": "OK"}
 
 
+
+
+
+
+# ================================================
 @app.post("/upload_files/{evidence_id}")
 async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, files: List[UploadFile] = File(...)):
     upload_folder = f"docs"

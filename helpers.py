@@ -35,7 +35,7 @@ from openai import AzureOpenAI
 import base64
 
 
-def upload_to_space(origin, output,remove, region_name='nyc3'):
+async def upload_to_space(origin, output,remove, region_name='nyc3'):
 
     client = boto3.client(
         's3',
@@ -333,20 +333,6 @@ async def image_loader(image_file, image_url):
         print(f"Error processing document {image_file}: {str(e)}")
         return []
 
-def delete_all_in_dir(directory):
-    if os.path.exists(directory):
-        for filename in os.listdir(directory):
-            file_path = os.path.join(directory, filename)
-            try:
-                if os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-                else:
-                    os.remove(file_path)
-            except Exception as e:
-                print(f"Error deleting {file_path}: {e}")
-    else:
-        print(f"The directory {directory} does not exist.")
-
 
 async def load_data(filenames):
     print("Background task initiated")
@@ -359,8 +345,7 @@ async def load_data(filenames):
                 file = os.path.abspath(os.path.join(str(files), str(filename)))
                 print(f"Processing {file}")
                 file_extension = pathlib.Path(file).suffix
-                print("file extension", file_extension)
-
+                
                 if file_extension == ".pdf":
                     try:
                         raw_documents = PyPDFLoader(file, extract_images=True).load()
@@ -387,15 +372,9 @@ async def load_data(filenames):
                     all_documents.extend(raw_documents)
 
                 elif file_extension in [".jpg", ".jpeg", ".png"]:                    
-                    space_url = upload_to_space(file, file, False)
+                    space_url = await upload_to_space(file, file, False)
                     raw_documents = await image_loader(file, space_url)
                     all_documents.extend(raw_documents)
-
-                # os.makedirs("docs", exist_ok=True)
-                # source_file = os.path.join("temp_docs", filename)
-                # destination_file = os.path.join("docs", filename)
-                # shutil.copy(source_file, destination_file)
-                # delete_all_in_dir("temp_docs")
 
             except Exception as e:
                 print(f"Failed to process {filename}: {e}")
@@ -441,7 +420,7 @@ async def load_data(filenames):
                 text.metadata["sheet"] = ""
 
         print(texts[0])
-        # await vectordb.aadd_documents(documents=texts)
+        await vectordb.aadd_documents(documents=texts)
 
         print("Files Added")
 
@@ -502,7 +481,7 @@ async def clean_content(response, source):
         return response
 
 
-def check_file_format(persist_directory: str):
+async def check_file_format(persist_directory: str):
     # Mapping of file extensions to output values
     file_format_output = {
         ".pdf": (5, 7),
@@ -578,7 +557,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
     
     chat_history.setdefault(uid, [])
 
-    threshold, k = check_file_format(persist_directory)
+    threshold, k = await check_file_format(persist_directory)
 
     try:
         retriever = AzureAISearchRetriever(
@@ -658,7 +637,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                             )    
 
                 space_file_path = f"annotated_{source}"
-                space_url = upload_to_space("out.pdf", space_file_path, True)
+                space_url = await upload_to_space("out.pdf", space_file_path, True)
 
             elif "xlsx" in source:
                 await highlight_text_in_xlsx(
@@ -667,7 +646,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                             page_contents
                                             )
                 space_file_path = f"annotated_{source}"
-                space_url = upload_to_space("out.xlsx", space_file_path, True)
+                space_url = await upload_to_space("out.xlsx", space_file_path, True)
 
             elif "csv" in source:
                 await highlight_text_in_csv(
@@ -677,7 +656,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                             )
                 space_file_path = f"annotated_{source}"
                 space_file_path = space_file_path.replace("csv", "xlsx")
-                space_url = upload_to_space("out.xlsx", space_file_path, True)
+                space_url = await upload_to_space("out.xlsx", space_file_path, True)
 
             elif "docx" in source:
                 await highlight_text_in_docx(
@@ -686,10 +665,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
                                             page_contents
                                             )
                 space_file_path = f"annotated_{source}"
-                space_url = upload_to_space("out.docx", space_file_path, True)
-            
-        # if not markup_check:
-        #     ai_answer = "Your question is not relevant to the evidence"
+                space_url = await upload_to_space("out.docx", space_file_path, True)
 
         return {
             "AI_message": ai_answer,
