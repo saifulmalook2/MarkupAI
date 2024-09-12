@@ -11,6 +11,7 @@ from fastapi.encoders import jsonable_encoder
 import os        
 from helpers import generate_response, load_data
 import socketio
+import asyncio
 
 logging.basicConfig(format="%(levelname)s     %(message)s", level=logging.INFO)
 httpx_logger = logging.getLogger("httpx")
@@ -50,13 +51,19 @@ async def disconnect(sid):
 
 
 # ==============================SOCKET EVENT FOR FILE UPLOAD =========================
+
 @sio_server.event
 async def upload_files(sid, data):
     evidence_id = data['evidence_id']
     files = data['files']
 
+    # Emit 'files_saved' as soon as the files are received
     await sio_server.emit('files_saved', {'msg': 'Files uploaded'}, room=sid)
-    await sio_server.sleep(0)
+
+    # Process files in the background
+    asyncio.create_task(process_files(sid, evidence_id, files))
+
+async def process_files(sid, evidence_id, files):
     upload_folder = f"docs"
     os.makedirs(upload_folder, exist_ok=True)
 
@@ -70,14 +77,14 @@ async def upload_files(sid, data):
             buffer.write(file['content'])
         logging.info(f"Saved file: {filename} at {file_path}")
 
-
+    # Call load_data in the background
     added_files = await load_data(filenames)
 
+    # Emit 'processing_complete' once the processing is done
     if added_files:
-        await sio_server.emit('processing_complete', {'files': filenames, "attachment_id" : evidence_id, "saved_name" : added_files}, room=sid)
+        await sio_server.emit('processing_complete', {'files': filenames, "attachment_id": evidence_id, "saved_name": added_files}, room=sid)
     else:
-        await sio_server.emit('processing_complete', {'files': None, "attachment_id" : None}, room=sid)
-
+        await sio_server.emit('processing_complete', {'files': None, "attachment_id": None}, room=sid)
 
 class ProjectManagmentUpload(BaseModel):
     uid :str
