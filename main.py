@@ -12,7 +12,6 @@ import os
 from helpers import generate_response, load_data
 import socketio
 
-
 logging.basicConfig(format="%(levelname)s     %(message)s", level=logging.INFO)
 httpx_logger = logging.getLogger("httpx")
 httpx_logger.setLevel(logging.WARNING)
@@ -66,15 +65,15 @@ async def upload_files(sid, data):
         with open(file_path, "wb") as buffer:
             buffer.write(file['content'])
         print(f"Saved file: {filename} at {file_path}")
-        
+
     await sio_server.emit('files_saved', {'msg': 'Files uploaded'}, room=sid)
 
-    added_files = await load_data(filenames)
+    # added_files = await load_data(filenames)
 
-    if added_files:
-        await sio_server.emit('processing_complete', {'files': filenames, "attachment_id" : evidence_id, "saved_name" : added_files}, room=sid)
-    else:
-        await sio_server.emit('processing_complete', {'files': None, "attachment_id" : None}, room=sid)
+    # if added_files:
+    #     await sio_server.emit('processing_complete', {'files': filenames, "attachment_id" : evidence_id, "saved_name" : added_files}, room=sid)
+    # else:
+    #     await sio_server.emit('processing_complete', {'files': None, "attachment_id" : None}, room=sid)
 
 
 class ProjectManagmentUpload(BaseModel):
