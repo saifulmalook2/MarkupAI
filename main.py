@@ -11,7 +11,6 @@ from fastapi.encoders import jsonable_encoder
 import os        
 from helpers import generate_response, load_data
 import socketio
-import asyncio
 
 logging.basicConfig(format="%(levelname)s     %(message)s", level=logging.INFO)
 httpx_logger = logging.getLogger("httpx")
@@ -71,24 +70,13 @@ async def upload_files(sid, data):
             buffer.write(file['content'])
         logging.info(f"Saved file: {filename} at {file_path}")
 
-    asyncio.create_task(background_process_files(filenames, evidence_id, sid))
 
-async def background_process_files(filenames, evidence_id, sid):
     added_files = await load_data(filenames)
 
     if added_files:
-        await sio_server.emit('processing_complete', {
-            'files': filenames,
-            "attachment_id": evidence_id,
-            "saved_name": added_files
-        }, room=sid)
+        await sio_server.emit('processing_complete', {'files': filenames, "attachment_id" : evidence_id, "saved_name" : added_files}, room=sid)
     else:
-        await sio_server.emit('processing_complete', {
-            'files': None,
-            "attachment_id": None
-        }, room=sid)
-
-
+        await sio_server.emit('processing_complete', {'files': None, "attachment_id" : None}, room=sid)
 
 
 class ProjectManagmentUpload(BaseModel):
