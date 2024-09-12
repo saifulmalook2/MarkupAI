@@ -40,7 +40,7 @@ async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, file
             buffer.write(await _file.read())
         print(f"Saved file: {filename} at {file_path}")
         
-    background_tasks.add_task(load_data, upload_folder)
+    background_tasks.add_task(load_data, filenames)
 
     return {"Message": "Files Added"}
 

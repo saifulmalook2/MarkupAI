@@ -348,28 +348,26 @@ def delete_all_in_dir(directory):
         print(f"The directory {directory} does not exist.")
 
 
-async def load_data(folder_path: str):
+async def load_data(filenames: str):
     print("Background task initiated")
     try:
         all_documents = []
 
-        files = os.path.join(os.getcwd(), folder_path)
-        for filename in os.listdir(files):
+        files = os.path.join(os.getcwd(), "temp_docs")
+        for filename in filenames:
             try:
                 file = os.path.abspath(os.path.join(str(files), str(filename)))
                 print(f"Processing {file}")
                 file_extension = pathlib.Path(file).suffix
 
+                print("file extension", file_extension)
                 if file_extension == ".pdf":
                     try:
-                        # Try loading the PDF with images
                         raw_documents = PyPDFLoader(file, extract_images=True).load()
                     except ValueError as e:
                         print(f"Failed to extract images from {file}: {e}")
-                        # If image extraction fails, load the PDF without images
                         raw_documents = PyPDFLoader(file, extract_images=False).load()
                     all_documents.extend(raw_documents)
-
 
                 elif file_extension == ".xlsx":
                     print("Loading")
@@ -443,7 +441,7 @@ async def load_data(folder_path: str):
                 text.metadata["sheet"] = ""
 
         print(texts[0])
-        await vectordb.aadd_documents(documents=texts)
+        # await vectordb.aadd_documents(documents=texts)
 
         print("Files Added")
 
