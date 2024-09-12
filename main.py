@@ -19,7 +19,7 @@ httpx_logger = logging.getLogger("httpx")
 httpx_logger.setLevel(logging.WARNING)
 
 
-logging.info(f"KEYYY {os.getenv("SECRET_KEY")} {os.getenv("AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS")}")
+logging.info(f'KEYYY {os.getenv("SECRET_KEY")} {os.getenv("AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS")}')
 # key = os.getenv("SECRET_KEY")
 key = "4324324"
 KEY = key.encode()
