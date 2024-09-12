@@ -55,11 +55,6 @@ async def root():
     return {"msg": "OK"}
 
 
-@app.post("/test/{evidence_id}")
-async def upload_files(evidence_id: str, headers: dict = Depends(verify_request)):
-    logging.info(f"valid toek {evidence_id}")
-    return "yess"
-
 @app.post("/upload_files/{evidence_id}")
 async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, files: List[UploadFile] = File(...), headers: dict = Depends(verify_request)):
     upload_folder = f"docs"
