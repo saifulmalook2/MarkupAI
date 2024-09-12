@@ -584,13 +584,13 @@ async def generate_response(uid, persist_directory, rfe, markup):
         # Process chat with the created chain
         result = await process_chat(chain, rfe, chat_history[uid], persist_directory, threshold)
 
-        logging.info(f"original answer {result["answer"]}")
-        logging.info(f"original context {result["context"]}")
+        logging.info(f"original answer {result['answer']}")
+        logging.info(f"original context {result['context']}")
         
         result = await clean_content(result, persist_directory)
 
-        logging.info(f"filtered answer {result["answer"]}")
-        logging.info(f"filtered context {result["context"]}")
+        logging.info(f"filtered answer {result['answer']}")
+        logging.info(f"filtered context {result['context']}")
         
         ai_answer = result["answer"].strip()
 
