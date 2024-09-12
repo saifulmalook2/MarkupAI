@@ -23,7 +23,6 @@ import csv
 import pandas as pd
 from docx import Document as DocxDocument
 from docx.enum.text import WD_COLOR_INDEX
-# from langchain_community.vectorstores.azuresearch import AzureSearch
 from langchain.schema import Document
 from typing import List
 from langchain_community.retrievers import AzureAISearchRetriever
@@ -33,7 +32,13 @@ import shutil
 from pathlib import Path
 from openai import AzureOpenAI
 import base64
+import logging
 
+logging.basicConfig(format="%(levelname)s     %(message)s", level=logging.INFO)
+httpx_logger = logging.getLogger("httpx")
+httpx_logger.setLevel(logging.WARNING)
+logging.getLogger("uvicorn").setLevel(logging.WARNING)  # Set uvicorn to warning level
+logging.getLogger("azure.core.pipeline.policies").setLevel(logging.WARNING)
 
 async def upload_to_space(origin, output,remove, region_name='nyc3'):
 

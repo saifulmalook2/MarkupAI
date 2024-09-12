@@ -15,6 +15,8 @@ import socketio
 logging.basicConfig(format="%(levelname)s     %(message)s", level=logging.INFO)
 httpx_logger = logging.getLogger("httpx")
 httpx_logger.setLevel(logging.WARNING)
+logging.getLogger("uvicorn").setLevel(logging.WARNING)  # Set uvicorn to warning level
+logging.getLogger("azure.core.pipeline.policies").setLevel(logging.WARNING)
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -56,8 +58,6 @@ async def upload_files(sid, data):
     os.makedirs(upload_folder, exist_ok=True)
 
     print("attachment id", evidence_id)
-    await sio_server.emit('saving_files', {'msg': 'Files saving'}, room=sid)
-
     filenames = []
     for file in files:
         filename = file['filename'].replace(" ", "_")
@@ -68,6 +68,7 @@ async def upload_files(sid, data):
             buffer.write(file['content'])
         print(f"Saved file: {filename} at {file_path}")
 
+    await sio_server.emit('files_saved', {'msg': 'Files uploaded'}, room=sid)
 
     added_files = await load_data(filenames)
 
