@@ -345,7 +345,7 @@ async def load_data(filenames):
                 file = os.path.abspath(os.path.join(str(files), str(filename)))
                 print(f"Processing {file}")
                 file_extension = pathlib.Path(file).suffix
-                
+
                 if file_extension == ".pdf":
                     try:
                         raw_documents = PyPDFLoader(file, extract_images=True).load()
@@ -424,8 +424,11 @@ async def load_data(filenames):
 
         print("Files Added")
 
+        return filenames
+
     except Exception as e:
         print(f"Error in load_data: {e}")
+        return False
 
 
 chat_history = {}

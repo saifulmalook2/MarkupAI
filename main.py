@@ -47,10 +47,12 @@ async def disconnect(sid):
     print(f"Client {sid} disconnected")
 
 
-    
+
 # ==============================SOCKET EVENT FOR FILE UPLOAD =========================
-@app.post("/upload_files/{evidence_id}")
-async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, files: List[UploadFile] = File(...)):
+@sio_server.event
+async def upload_files(sid, data):
+    evidence_id = data['evidence_id']
+    files = data['files']
     upload_folder = f"docs"
     os.makedirs(upload_folder, exist_ok=True)
 
@@ -65,9 +67,14 @@ async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, file
             buffer.write(await _file.read())
         print(f"Saved file: {filename} at {file_path}")
         
-    background_tasks.add_task(load_data, filenames)
+    await sio_server.emit('files_saved', {'msg': 'Files uploaded'}, room=sid)
 
-    return {"Message": "Files Added"}
+    added_files = await load_data(filenames)
+
+    if added_files:
+        await sio_server.emit('processing_complete', {'files': filenames, "attachment_id" : evidence_id, "saved_name" : added_files}, room=sid)
+    else:
+        await sio_server.emit('processing_complete', {'files': None, "attachment_id" : None}, room=sid)
 
 
 class ProjectManagmentUpload(BaseModel):
