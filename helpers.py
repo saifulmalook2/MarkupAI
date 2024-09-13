@@ -465,24 +465,29 @@ async def clean_content(response, source):
         azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT"), 
         api_key=os.getenv("AZURE_OPENAI_API_KEY"),  
         api_version="2024-02-15-preview",
-        azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT")
-                        )
+        azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
+        temperature = 0.3
+        )
 
-    user_question = f"Is this content relevant to the following question: {response['input']}, or answer: {response['answer']}?"
+    user_question = f"Question: {response['input']}, or answer: {response['answer']}?"
     system_prompt = """
-    Your task is to filter irrelevant content based on the provided question or answer:
-    Question & Answer: {user_question}.
-    Please return only the contexts that are relevant to this question or answer.
-    Also if the source mentioned in the context is not the same as '{source}' then 
-    answer should be equal to 'Your question is not relevant to the evidence' 
-    if the source mentioned in the context is the same as '{source}' the answer should be equal to '{answer}'
-    If the Question or Answer is a general question such as greetings etc, then the "context" should be an empty list
-    
-    Maintain the format of the context as the original!
+        Your task is to filter irrelevant content based on the provided question or answer:
+        Question & Answer: {user_question}.
+        Please return only the contexts that are relevant to this question or answer.
 
-    Respond in similar JSON format.
-    "answer" : "..."
-    "context" : [...], This is a list of dicts
+        Also, if the source mentioned in the context is not the same as '{source}', then 
+        the answer should be equal to 'Your question is not relevant to the evidence'. 
+        
+        If the source mentioned in the context is the same as '{source}', the answer should be equal to '{answer}'.
+        
+        If the Question or Answer is a general talk, such as greetings, small talk (e.g., "hi", "hello", "how are you", "what's the weather", "how's it going", etc.), 
+        then the "context" should be an empty list.
+        
+        Maintain the format of the context as the original!
+
+        Respond in similar JSON format.
+        "answer" : "...",
+        "context" : [...], This is a list of dicts
     """
     system_prompt = system_prompt.format(user_question=user_question, source=source, answer=response['answer'])
     context_message = f"Here is the context to filter:\n{response['context']}"
