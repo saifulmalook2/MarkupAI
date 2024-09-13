@@ -574,6 +574,8 @@ async def process_chat(chain, question, chat_history, dir, threshold):
         "answer": answer,
         "context": []
     }
+    logging.info(f"first response  {final_response}")
+
     for docs in response["context"]:
         score = docs.metadata['@search.score']
         metadata_dict = docs.metadata["metadata"]
