@@ -531,7 +531,7 @@ async def check_file_format(persist_directory: str):
 
 
 async def create_chain(retriever, model):
-    system_prompt = "You are an expert Software Security Auditor. Your job is to provide answers relevant to the knowledge base provided.  Do not provide any information that is not explicitly contained in the documents retrieved.  Always give summarized answers using only the content from the retrieved documents.  If there is not any information in the documents, respond with 'Try phrasing your question to be more specific to the evidence' or 'Your question is not relevant to the evidence'. {context}"
+    system_prompt = "You are an expert Software Security Auditor. Your job is to provide answers relevant to the knowledge base provided.  Do not provide any information that is not contained in the documents retrieved.  Always give summarized answers using only the content from the retrieved documents.  If there is not any information in the documents, respond with 'Try phrasing your question to be more specific to the evidence' or 'Your question is not relevant to the evidence'. {context}"
     
     main_prompt = ChatPromptTemplate.from_messages(
         [
@@ -547,7 +547,7 @@ async def create_chain(retriever, model):
             ("human", "{input}"),
             (
                 "human",
-                "Always Fetch and use the documents provided for any information and take the above conversation into consideration as well.",
+                "Always Fetch and use the documents provided for any information and use those to formulate a response",
             ),
         ]
     )
