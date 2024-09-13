@@ -465,9 +465,8 @@ async def clean_content(response, source):
         azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT"), 
         api_key=os.getenv("AZURE_OPENAI_API_KEY"),  
         api_version="2024-02-15-preview",
-        azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
-         temperature=0.3
-        )
+        azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT")
+                        )
 
     user_question = f"Is this content relevant to the following question: {response['input']}, or answer: {response['answer']}?"
     system_prompt = """
@@ -574,6 +573,7 @@ async def process_chat(chain, question, chat_history, dir, threshold):
             custom_data = {"metadata" : metadata_dict, "page_content" : docs.page_content}
             final_response['context'].append(custom_data)
 
+    logging.info(f"initial response {final_response}")
     return final_response
 
 
