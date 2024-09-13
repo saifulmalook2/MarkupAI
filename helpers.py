@@ -579,6 +579,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
     
     exist = await check_documents_exist(persist_directory)
 
+    logging.info(f"exists {exist}")
     # chat_history.setdefault(uid, [])
 
     # threshold, k = await check_file_format(persist_directory)
