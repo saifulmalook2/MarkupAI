@@ -623,13 +623,14 @@ async def generate_response(uid, persist_directory, rfe, markup):
         
         ai_answer = result["answer"].strip()
 
-        if ai_answer in fallback_texts or result["answer"] in fallback_texts:
-            return {
-            "AI_message": ai_answer,
-            "Source": None,
-            "Pages/Rows" : None,
-            "Annotated_file" : None
-            }
+        for text in fallback_texts:
+            if text in ai_answer or text in result["answer"]:
+                return {
+                "AI_message": ai_answer,
+                "Source": None,
+                "Pages/Rows" : None,
+                "Annotated_file" : None
+                }
         
         chat_history[uid].extend(
             [HumanMessage(content=rfe), AIMessage(content=result["answer"])]
