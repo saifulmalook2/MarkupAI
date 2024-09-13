@@ -9,7 +9,7 @@ from typing import List
 from pydantic import BaseModel
 from fastapi.encoders import jsonable_encoder 
 import os        
-from helpers import generate_response, load_data
+from helpers import generate_response, load_data, check_documents_exist
 import socketio
 from cryptography.fernet import Fernet
 
@@ -76,6 +76,23 @@ async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, file
     return {"Message": "Files Added"}
 
 
+class ProjectManagmentExist(BaseModel):
+    name : str
+
+
+@app.post("/project-management/check-upload/{evidence_id}")
+async def document_exist(evidence_id:str, data: ProjectManagmentExist, headers: dict = Depends(verify_request)):
+    data_doc = jsonable_encoder(data)
+    name = data_doc['name']
+    name =  os.path.basename(name)
+    file_name = f"{evidence_id}_{name}"
+
+    print("file name", file_name)
+
+    response = check_documents_exist(file_name)
+    return response
+    
+
 class ProjectManagmentUpload(BaseModel):
     uid :str
     auditor_rfe: str
@@ -95,10 +112,7 @@ async def project_management_upload(evidence_id:str, data: ProjectManagmentUploa
 
 
     print("file name", file_name)
-    print("evidence id", evidence_id)
-    print("original filename", name)
 
     user_id = f"{uid}-{evidence_id}"
     response = await generate_response(user_id, file_name, rfe, markup)
     return response
-    
