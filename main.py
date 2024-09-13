@@ -91,7 +91,9 @@ async def document_exist(evidence_id:str, data: ProjectManagmentExist, headers: 
 
     response = check_documents_exist(file_name)
 
-    return {"status" : response}
+    logging.info(f"response{response}")
+    # return {"status" : response}
+    return "heheehjejjaea"
     
 
 class ProjectManagmentUpload(BaseModel):
