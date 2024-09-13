@@ -377,7 +377,7 @@ async def load_data(filenames):
                 elif file_extension == ".csv":
                     try:
                         raw_documents = CSVLoader(file_path=file).load()
-                    except ValueError as e:
+                    except Exception as e:
                         logging.info(f"Failed to extract rows from {file}: {e}")
                     all_documents.extend(raw_documents)
 
