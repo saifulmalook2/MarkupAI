@@ -84,7 +84,7 @@ class ProjectManagmentUpload(BaseModel):
 
 
 @app.post("/project-management/analyze-upload/{evidence_id}")
-async def project_management_upload(evidence_id:str, data: ProjectManagmentUpload):
+async def project_management_upload(evidence_id:str, data: ProjectManagmentUpload, headers: dict = Depends(verify_request)):
     data_doc = jsonable_encoder(data)
     rfe = data_doc['auditor_rfe']
     name = data_doc['name']
