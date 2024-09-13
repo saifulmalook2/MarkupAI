@@ -453,8 +453,6 @@ async def check_documents_exist(source):
 
 chat_history = {}
 
-
-
 async def clean_content(response, source):
     
     client = AzureOpenAI(

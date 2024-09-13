@@ -33,7 +33,7 @@ async def verify_request(request: Request):
     if auth_token:
         try:
             token = auth_token.split(' ')[1]
-            # logging.info(f'Authorization token: {token}')
+            logging.info(f'Authorization token: {token}')
             
             decrypted_token = cipher_suite.decrypt(token.encode()).decode()
             
