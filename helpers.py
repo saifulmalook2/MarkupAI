@@ -431,6 +431,22 @@ async def load_data(filenames):
         return False
 
 
+async def check_documents_exist(source):
+    retriever = AzureAISearchRetriever(
+        api_key=os.getenv("AZURE_SEARCH_KEY"),
+        service_name="azure-vector-db",
+        index_name="soc-index",
+        top_k=1,  # Limit to 1 document
+        filter=f"metadata/source eq '{source}'"
+    )
+
+    # Perform the retrieval
+    documents = retriever.get_relevant_documents(query="")  # Query is irrelevant here
+    logging.info(f"the documents {documents}")
+
+    # Check if any documents were found
+    return len(documents) > 0
+
 chat_history = {}
 
 
@@ -556,133 +572,136 @@ async def process_chat(chain, question, chat_history, dir, threshold):
 
 async def generate_response(uid, persist_directory, rfe, markup):
 
+
     persist_directory = persist_directory.replace(" ", "_")
     
-    chat_history.setdefault(uid, [])
+    exist = await check_documents_exist(persist_directory)
 
-    threshold, k = await check_file_format(persist_directory)
+    # chat_history.setdefault(uid, [])
 
-    try:
-        retriever = AzureAISearchRetriever(
-            api_key=os.getenv("AZURE_SEARCH_KEY"),
-            service_name="azure-vector-db",
-            index_name="soc-index",
-            top_k=k,  # Number of documents to retrieve
-            filter=f"metadata/source eq '{persist_directory}'"
-        )
-        # Initialize Azure Chat model
-        model = AzureChatOpenAI(
-            max_tokens=200,
-            openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
-            azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
-            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-            api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-        )
-        # Create chain with Azure Cognitive Search retriever and model
-        chain = await create_chain(retriever, model)
+    # threshold, k = await check_file_format(persist_directory)
 
-        # Process chat with the created chain
-        result = await process_chat(chain, rfe, chat_history[uid], persist_directory, threshold)
+    # try:
+    #     retriever = AzureAISearchRetriever(
+    #         api_key=os.getenv("AZURE_SEARCH_KEY"),
+    #         service_name="azure-vector-db",
+    #         index_name="soc-index",
+    #         top_k=k,  # Number of documents to retrieve
+    #         filter=f"metadata/source eq '{persist_directory}'"
+    #     )
+    #     # Initialize Azure Chat model
+    #     model = AzureChatOpenAI(
+    #         max_tokens=200,
+    #         openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+    #         azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
+    #         azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    #         api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    #     )
+    #     # Create chain with Azure Cognitive Search retriever and model
+    #     chain = await create_chain(retriever, model)
 
-        logging.info(f"original answer {result['answer']}")
-        logging.info(f"original context {result['context']}")
+    #     # Process chat with the created chain
+    #     result = await process_chat(chain, rfe, chat_history[uid], persist_directory, threshold)
+
+    #     logging.info(f"original answer {result['answer']}")
+    #     logging.info(f"original context {result['context']}")
         
-        result = await clean_content(result, persist_directory)
+    #     result = await clean_content(result, persist_directory)
 
-        logging.info(f"filtered answer {result['answer']}")
-        logging.info(f"filtered context {result['context']}")
+    #     logging.info(f"filtered answer {result['answer']}")
+    #     logging.info(f"filtered context {result['context']}")
         
-        ai_answer = result["answer"].strip()
+    #     ai_answer = result["answer"].strip()
 
-        chat_history[uid].extend(
-            [HumanMessage(content=rfe), AIMessage(content=result["answer"])]
-        )
+    #     chat_history[uid].extend(
+    #         [HumanMessage(content=rfe), AIMessage(content=result["answer"])]
+    #     )
 
-        source = persist_directory
-        pages, page_contents = set(), {}
-        markup_check = False
-        for doc_details in result["context"]:
+    #     source = persist_directory
+    #     pages, page_contents = set(), {}
+    #     markup_check = False
+    #     for doc_details in result["context"]:
             
-            if "page_content" in doc_details:
-                markup_check = True
+    #         if "page_content" in doc_details:
+    #             markup_check = True
 
-                lines = doc_details["page_content"].splitlines()
+    #             lines = doc_details["page_content"].splitlines()
 
             
-                if "pdf" in source:
-                    page = int(doc_details['metadata'].get('page')) + 1
-                    page_contents[page] = lines
+    #             if "pdf" in source:
+    #                 page = int(doc_details['metadata'].get('page')) + 1
+    #                 page_contents[page] = lines
 
-                elif "page_name" in source:
-                    page = doc_details['metadata'].get('page_name')
-                    page_contents[page] = lines
+    #             elif "page_name" in source:
+    #                 page = doc_details['metadata'].get('page_name')
+    #                 page_contents[page] = lines
 
-                elif source.endswith((".xlsx", ".csv")):
-                    page = int(doc_details['metadata'].get('page')) + 1
-                    page_contents[page] = {"sheet": doc_details['metadata'].get('sheet'), "text" : lines}
+    #             elif source.endswith((".xlsx", ".csv")):
+    #                 page = int(doc_details['metadata'].get('page')) + 1
+    #                 page_contents[page] = {"sheet": doc_details['metadata'].get('sheet'), "text" : lines}
 
-                elif "docx" in source:
-                    page = int(doc_details['metadata'].get('page'))
-                    page_contents[page] = doc_details["page_content"].split("\n")
-                else:
-                    page = 0        
+    #             elif "docx" in source:
+    #                 page = int(doc_details['metadata'].get('page'))
+    #                 page_contents[page] = doc_details["page_content"].split("\n")
+    #             else:
+    #                 page = 0        
 
-            pages.add(page)
+    #         pages.add(page)
         
-        space_url = ""
+    #     space_url = ""
 
-        if markup and markup_check:
-            if "pdf" in source:
-                await highlight_text_in_pdf(
-                                            f"./docs/{source}",
-                                            "out.pdf",
-                                            page_contents,
-                                            )    
+    #     if markup and markup_check:
+    #         if "pdf" in source:
+    #             await highlight_text_in_pdf(
+    #                                         f"./docs/{source}",
+    #                                         "out.pdf",
+    #                                         page_contents,
+    #                                         )    
 
-                space_file_path = f"annotated_{source}"
-                space_url = await upload_to_space("out.pdf", space_file_path, True)
+    #             space_file_path = f"annotated_{source}"
+    #             space_url = await upload_to_space("out.pdf", space_file_path, True)
 
-            elif "xlsx" in source:
-                await highlight_text_in_xlsx(
-                                            f"./docs/{source}",
-                                            "out.xlsx", 
-                                            page_contents
-                                            )
-                space_file_path = f"annotated_{source}"
-                space_url = await upload_to_space("out.xlsx", space_file_path, True)
+    #         elif "xlsx" in source:
+    #             await highlight_text_in_xlsx(
+    #                                         f"./docs/{source}",
+    #                                         "out.xlsx", 
+    #                                         page_contents
+    #                                         )
+    #             space_file_path = f"annotated_{source}"
+    #             space_url = await upload_to_space("out.xlsx", space_file_path, True)
 
-            elif "csv" in source:
-                await highlight_text_in_csv(
-                                            f"./docs/{source}",
-                                            "out.xlsx",
-                                            page_contents
-                                            )
-                space_file_path = f"annotated_{source}"
-                space_file_path = space_file_path.replace("csv", "xlsx")
-                space_url = await upload_to_space("out.xlsx", space_file_path, True)
+    #         elif "csv" in source:
+    #             await highlight_text_in_csv(
+    #                                         f"./docs/{source}",
+    #                                         "out.xlsx",
+    #                                         page_contents
+    #                                         )
+    #             space_file_path = f"annotated_{source}"
+    #             space_file_path = space_file_path.replace("csv", "xlsx")
+    #             space_url = await upload_to_space("out.xlsx", space_file_path, True)
 
-            elif "docx" in source:
-                await highlight_text_in_docx(
-                                            f"./docs/{source}",
-                                            "out.docx",
-                                            page_contents
-                                            )
-                space_file_path = f"annotated_{source}"
-                space_url = await upload_to_space("out.docx", space_file_path, True)
+    #         elif "docx" in source:
+    #             await highlight_text_in_docx(
+    #                                         f"./docs/{source}",
+    #                                         "out.docx",
+    #                                         page_contents
+    #                                         )
+    #             space_file_path = f"annotated_{source}"
+    #             space_url = await upload_to_space("out.docx", space_file_path, True)
 
-        return {
-            "AI_message": ai_answer,
-            "Source": source,
-            "Pages/Rows" : pages,
-            "Annotated_file" : space_url
-            }
+    #     return {
+    #         "AI_message": ai_answer,
+    #         "Source": source,
+    #         "Pages/Rows" : pages,
+    #         "Annotated_file" : space_url
+    #         }
     
-    except Exception as e:
-        logging.info(f"Error occured {e}")
+    # except Exception as e:
+    #     logging.info(f"Error occured {e}")
 
-        return {
-            "AI_message": "There was an issue while fetching information",
-            "Source": "",
-            "Pages/Rows" : "",
-            "Annotated_file" : ""
-            }
+    #     return {
+    #         "AI_message": "There was an issue while fetching information",
+    #         "Source": "",
+    #         "Pages/Rows" : "",
+    #         "Annotated_file" : ""
+    #         }
