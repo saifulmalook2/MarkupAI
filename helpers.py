@@ -436,17 +436,18 @@ async def check_documents_exist(source):
         api_key=os.getenv("AZURE_SEARCH_KEY"),
         service_name="azure-vector-db",
         index_name="soc-index",
-        top_k=1,  # Limit to 1 document
+        top_k=1,
         filter=f"metadata/source eq '{source}'"
     )
 
-    # Perform the retrieval
     # documents = retriever.get_relevant_documents(query="")  # Query is irrelevant here
     documents = retriever.invoke("")
-    logging.info(f"the documents {documents[0].metadata['metadata']['source']}")
-
-    # Check if any documents were found
-    return len(documents) > 0
+    if len(documents) > 0:
+        doc_source = documents[0].metadata['metadata']['source']
+        if doc_source == source:
+            return True
+        
+    return False
 
 chat_history = {}
 
