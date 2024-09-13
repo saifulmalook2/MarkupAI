@@ -453,6 +453,10 @@ async def check_documents_exist(source):
 
 chat_history = {}
 
+fallback_texts = ["Your question is not relevant to the evidence",
+                  'Try phrasing your question to be more specific to the evidence',
+                  'Your question is not relevant to the evidence']
+
 async def clean_content(response, source):
     
     client = AzureOpenAI(
@@ -610,6 +614,14 @@ async def generate_response(uid, persist_directory, rfe, markup):
         
         ai_answer = result["answer"].strip()
 
+        if ai_answer in fallback_texts:
+            return {
+            "AI_message": ai_answer,
+            "Source": None,
+            "Pages/Rows" : None,
+            "Annotated_file" : None
+            }
+        
         chat_history[uid].extend(
             [HumanMessage(content=rfe), AIMessage(content=result["answer"])]
         )
