@@ -575,9 +575,12 @@ async def process_chat(chain, question, chat_history, dir, threshold):
     for docs in response["context"]:
         score = docs.metadata['@search.score']
         metadata_dict = docs.metadata["metadata"]
-        if score >= threshold and metadata_dict['source'] == dir:
-            custom_data = {"metadata" : metadata_dict, "page_content" : docs.page_content}
-            final_response['context'].append(custom_data)
+        if metadata_dict['source'] == dir:
+            if score >= threshold:
+                custom_data = {"metadata" : metadata_dict, "page_content" : docs.page_content}
+                final_response['context'].append(custom_data)
+        else:
+            final_response["answer"] = "Your question is not relevant to the evidence"
 
     logging.info(f"initial response {final_response}")
     return final_response
