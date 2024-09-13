@@ -32,14 +32,13 @@ async def verify_request(request: Request):
     
     if auth_token:
         try:
-            token = auth_token.split(' ')[1]
-            logging.info(f'Authorization token: {token}')
-            
+            token = auth_token.split(' ')[1]            
             decrypted_token = cipher_suite.decrypt(token.encode()).decode()
-            logging.info(f'decrypted token: {decrypted_token}')
             
             # Compare decrypted token with expected value
             if decrypted_token != os.getenv("SECRET_TOKEN"):
+                logging.info("Invalid Token")
+
                 raise HTTPException(status_code=403, detail="Invalid token")
             else:
                 logging.info("Valid Token")
