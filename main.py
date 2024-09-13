@@ -89,7 +89,7 @@ async def document_exist(evidence_id:str, data: ProjectManagmentExist, headers: 
 
     print("file name", file_name)
 
-    response = check_documents_exist(file_name)
+    response = await check_documents_exist(file_name)
 
     logging.info(f"response{response}")
     # return {"status" : response}
