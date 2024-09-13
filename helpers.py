@@ -455,7 +455,9 @@ chat_history = {}
 
 fallback_texts = ["Your question is not relevant to the evidence",
                   'Try phrasing your question to be more specific to the evidence',
-                  'Your question is not relevant to the evidence']
+                  'Your question is not relevant to the evidence',
+                  "Your question is not relevant to the evidence. Try phrasing your question to be more specific to the evidence."
+                  ]
 
 async def clean_content(response, source):
     
