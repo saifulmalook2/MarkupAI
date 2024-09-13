@@ -36,6 +36,7 @@ async def verify_request(request: Request):
             logging.info(f'Authorization token: {token}')
             
             decrypted_token = cipher_suite.decrypt(token.encode()).decode()
+            logging.info(f'decrypted token: {decrypted_token}')
             
             # Compare decrypted token with expected value
             if decrypted_token != os.getenv("SECRET_TOKEN"):
