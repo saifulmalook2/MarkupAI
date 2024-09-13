@@ -244,6 +244,21 @@ async def docx_loader(file):
     return documents_with_paragraphs
 
 
+async def convert_csv_to_xlsx(csv_file_path, output_folder):
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    
+    df = pd.read_csv(csv_file_path)
+    
+    base_name = os.path.basename(csv_file_path)
+    file_name, _ = os.path.splitext(base_name)
+    
+    xlsx_file_path = os.path.join(output_folder, f"{file_name}.xlsx")
+    
+    df.to_excel(xlsx_file_path, index=False)
+    
+    print(f"File saved to {xlsx_file_path}")
+
 async def excel_loader(file):
     sheets = pd.read_excel(file, sheet_name=None)
     
@@ -360,7 +375,10 @@ async def load_data(filenames):
                     all_documents.extend(raw_documents)
 
                 elif file_extension == ".csv":
-                    raw_documents = CSVLoader(file_path=file).load()
+                    try:
+                        raw_documents = CSVLoader(file_path=file).load()
+                    except ValueError as e:
+                        logging.info(f"Failed to extract rows from {file}: {e}")
                     all_documents.extend(raw_documents)
 
                 elif file_extension == ".docx":
@@ -494,7 +512,7 @@ async def clean_content(response, source):
         response_ai = client.chat.completions.create(
             model="gpt-4o", 
             response_format={"type": "json_object"},
-            temperature=0.3,
+            # temperature=0.3,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": context_message}
