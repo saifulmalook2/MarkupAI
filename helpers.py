@@ -466,7 +466,6 @@ async def clean_content(response, source):
         api_key=os.getenv("AZURE_OPENAI_API_KEY"),  
         api_version="2024-02-15-preview",
         azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
-        temperature = 0.3
         )
 
     user_question = f"Question: {response['input']}, or answer: {response['answer']}?"
@@ -477,7 +476,7 @@ async def clean_content(response, source):
 
         Also, if the source mentioned in the context is not the same as '{source}', then 
         the answer should be equal to 'Your question is not relevant to the evidence'. 
-        
+
         If the source mentioned in the context is the same as '{source}', the answer should be equal to '{answer}'.
         
         If the Question or Answer is a general talk, such as greetings, small talk (e.g., "hi", "hello", "how are you", "what's the weather", "how's it going", etc.), 
@@ -495,6 +494,7 @@ async def clean_content(response, source):
         response_ai = client.chat.completions.create(
             model="gpt-4o", 
             response_format={"type": "json_object"},
+            temperature=0.3,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": context_message}
