@@ -488,7 +488,6 @@ async def clean_content(response, source):
         Maintain the format of the context as the original!
 
         Respond in similar JSON format.
-        "answer" : "...",
         "context" : [...], This is a list of dicts
     """
     system_prompt = system_prompt.format(user_question=user_question, source=source, answer=response['answer'])
@@ -507,8 +506,8 @@ async def clean_content(response, source):
         filtered_response = json.loads(response_text)
         logging.info(f"filtered response {filtered_response}")
         response['context'] = filtered_response['context']
-        if filtered_response["answer"] != response["answer"]:
-            response["answer"] = filtered_response["answer"]
+        # if filtered_response["answer"] != response["answer"]:
+        #     response["answer"] = filtered_response["answer"]
 
         return response
 
