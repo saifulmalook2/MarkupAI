@@ -333,6 +333,7 @@ async def image_loader(image_file, image_url):
         logging.info(f"Error processing document {image_file}: {str(e)}")
         return []
 
+failed_files = []
 
 async def load_data(filenames):
     logging.info("Background task initiated")
@@ -378,6 +379,8 @@ async def load_data(filenames):
 
             except Exception as e:
                 logging.info(f"Failed to process {filename}: {e}")
+                failed_files.append(os.path.basename(filename))
+                return 
 
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=300, chunk_overlap=50
@@ -434,6 +437,9 @@ async def load_data(filenames):
 async def check_documents_exist(source):
     source = source.replace(" ", "_")
 
+    if source in failed_files:
+        return False, "Failed Processing"
+    
     retriever = AzureAISearchRetriever(
         api_key=os.getenv("AZURE_SEARCH_KEY"),
         service_name="azure-vector-db",
@@ -447,11 +453,12 @@ async def check_documents_exist(source):
         doc_source = documents[0].metadata['metadata']['source']
         if doc_source == source:
             logging.info(f"Doc Exists")
-            return True
+            return True, "File Exists"
         
-    return False
+    return False, "File Processing"
 
 chat_history = {}
+
 
 fallback_texts = ["Your question is not relevant to the evidence",
                   'Try phrasing your question to be more specific to the evidence',
