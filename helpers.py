@@ -443,7 +443,7 @@ async def check_documents_exist(source):
     # Perform the retrieval
     # documents = retriever.get_relevant_documents(query="")  # Query is irrelevant here
     documents = retriever.invoke({"query": ""})
-    logging.info(f"the documents {documents[0].metadata['metadata']["source"]}")
+    logging.info(f"the documents {documents[0].metadata['metadata']['source']}")
 
     # Check if any documents were found
     return len(documents) > 0
