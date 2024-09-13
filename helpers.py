@@ -444,6 +444,7 @@ async def check_documents_exist(source):
     if len(documents) > 0:
         doc_source = documents[0].metadata['metadata']['source']
         if doc_source == source:
+            logging.info(f"Doc Exists")
             return True
         
     return False
