@@ -476,7 +476,8 @@ async def clean_content(response, source):
     Also if the source mentioned in the context is not the same as '{source}' then 
     answer should be equal to 'Your question is not relevant to the evidence' 
     if the source mentioned in the context is the same as '{source}' the answer should be equal to '{answer}'
-
+    If the Question or Answer is a general question such as greetings etc, then the "context" should be an empty list
+    
     Maintain the format of the context as the original!
 
     Respond in similar JSON format.
@@ -617,7 +618,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
         
         ai_answer = result["answer"].strip()
 
-        if ai_answer in fallback_texts:
+        if ai_answer in fallback_texts or result["answer"] in fallback_texts:
             return {
             "AI_message": ai_answer,
             "Source": None,
