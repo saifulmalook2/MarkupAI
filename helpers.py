@@ -609,8 +609,8 @@ async def generate_response(uid, persist_directory, rfe, markup):
         
         result = await clean_content(result, persist_directory)
 
-        logging.info(f"filtered answer {result['answer']}")
-        logging.info(f"filtered context {result['context']}")
+        # logging.info(f"filtered answer {result['answer']}")
+        # logging.info(f"filtered context {result['context']}")
         
         ai_answer = result["answer"].strip()
 
