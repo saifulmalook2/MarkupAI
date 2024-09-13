@@ -547,7 +547,7 @@ async def create_chain(retriever, model):
             ("human", "{input}"),
             (
                 "human",
-                "Fetch the documents provided and take the above conversation into consideration as well.",
+                "Always Fetch and use the documents provided for any information and take the above conversation into consideration as well.",
             ),
         ]
     )
