@@ -158,7 +158,6 @@ async def highlight_text_in_csv(csv_file_path, xlsx_file_path, index_dict):
     logging.info(f"CSV file has been written to {xlsx_file_path}")
 
 
-
 async def highlight_text_in_docx(docx_file, output_file, index_dict):
     doc = DocxDocument(docx_file)
     group_nums = sorted(index_dict.keys())  # Ensure keys are processed in order
@@ -466,6 +465,7 @@ fallback_texts = ["Your question is not relevant to the evidence",
                   "Your question is not relevant to the evidence. Try phrasing your question to be more specific to the evidence."
                   ]
 
+
 async def clean_content(response, source):
     
     client = AzureOpenAI(
@@ -481,10 +481,6 @@ async def clean_content(response, source):
         Question & Answer: {user_question}.
         Please return only the contexts that are relevant to this question or answer.
 
-        Also, if the source mentioned in the context is not the same as '{source}', then 
-        the answer should be equal to 'Your question is not relevant to the evidence'. 
-
-        If the source mentioned in the context is the same as '{source}', the answer should be equal to '{answer}'.
         
         If the Question or Answer is a general talk, such as greetings, small talk (e.g., "hi", "hello", "how are you", "what's the weather", "how's it going", etc.), 
         then the "context" should be an empty list.
