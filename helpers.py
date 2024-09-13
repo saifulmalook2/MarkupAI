@@ -440,7 +440,6 @@ async def check_documents_exist(source):
         filter=f"metadata/source eq '{source}'"
     )
 
-    logging.info(f"the source {source}")
     documents = retriever.invoke("")
     if len(documents) > 0:
         doc_source = documents[0].metadata['metadata']['source']
