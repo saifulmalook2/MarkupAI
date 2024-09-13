@@ -433,7 +433,7 @@ async def load_data(filenames):
 
 async def check_documents_exist(source):
     source = source.replace(" ", "_")
-    
+
     retriever = AzureAISearchRetriever(
         api_key=os.getenv("AZURE_SEARCH_KEY"),
         service_name="azure-vector-db",
@@ -465,20 +465,37 @@ async def clean_content(response, source):
         )
 
     user_question = f"Is this content relevant to the following question: {response['input']}, or answer: {response['answer']}?"
+    # system_prompt = """
+    # Your task is to filter irrelevant content based on the provided question or answer:
+    # Question & Answer: {user_question}.
+    # Please return only the contexts that are relevant to this question or answer.
+    # Also if the source mentioned in the context is not the same as '{source}' then 
+    # answer should be equal to 'Your question is not relevant to the evidence' 
+    # if the source mentioned in the context is the same as '{source}' the answer should be equal to '{answer}'
+
+    # Maintain the format of the context as the original!
+
+    # Respond in similar JSON format.
+    # "answer" : "..."
+    # "context" : [...], This is a list of dicts
+    # """
     system_prompt = """
-    Your task is to filter irrelevant content based on the provided question or answer:
-    Question & Answer: {user_question}.
-    Please return only the contexts that are relevant to this question or answer.
-    Also if the source mentioned in the context is not the same as '{source}' then 
-    answer should be equal to 'Your question is not relevant to the evidence' 
-    if the source mentioned in the context is the same as '{source}' the answer should be equal to '{answer}'
+        Your task is to evaluate and filter the provided context based on the following question or answer:
+        Question: {user_question}
 
-    Maintain the format of the context as the original!
+        Instructions:
+        1. Return only the parts of the context that are directly relevant to the question or answer.
+        2. If the 'source' in the context is different from '{source}', set the answer to: "Your question is not relevant to the evidence."
+        3. If the 'source' matches '{source}', retain the provided answer: '{answer}'.
 
-    Respond in similar JSON format.
-    "answer" : "..."
-    "context" : [...], This is a list of dicts
-    """
+        Ensure the context format remains unchanged.
+
+        Respond in this JSON format:
+        {
+            "answer": "...",
+            "context": [...]
+        }
+        """
     system_prompt = system_prompt.format(user_question=user_question, source=source, answer=response['answer'])
     context_message = f"Here is the context to filter:\n{response['context']}"
     try:
@@ -565,9 +582,7 @@ async def process_chat(chain, question, chat_history, dir, threshold):
     for docs in response["context"]:
         score = docs.metadata['@search.score']
         metadata_dict = docs.metadata["metadata"]
-        # print("got", score, "threshold", threshold)
         if score >= threshold and metadata_dict['source'] == dir:
-            # print("matched", score)
             custom_data = {"metadata" : metadata_dict, "page_content" : docs.page_content}
             final_response['context'].append(custom_data)
 
