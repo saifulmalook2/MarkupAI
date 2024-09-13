@@ -432,6 +432,8 @@ async def load_data(filenames):
 
 
 async def check_documents_exist(source):
+    source = source.replace(" ", "_")
+    
     retriever = AzureAISearchRetriever(
         api_key=os.getenv("AZURE_SEARCH_KEY"),
         service_name="azure-vector-db",
@@ -573,7 +575,6 @@ async def process_chat(chain, question, chat_history, dir, threshold):
 
 
 async def generate_response(uid, persist_directory, rfe, markup):
-
 
     persist_directory = persist_directory.replace(" ", "_")
     
