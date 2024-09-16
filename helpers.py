@@ -26,6 +26,7 @@ from docx.enum.text import WD_COLOR_INDEX
 from langchain.schema import Document
 from typing import List
 from langchain_community.retrievers import AzureAISearchRetriever
+from langchain_community.document_loaders import AzureAIDocumentIntelligenceLoader
 from vector_db import AzureSearch
 import boto3
 import shutil
@@ -265,75 +266,6 @@ async def excel_loader(file):
     return documents_with_rows
 
 
-async def image_loader(image_file, image_url):
-    logging.info(f"the image {image_url}")
-    # Initialize Azure OpenAI client
-    client = AzureOpenAI(
-        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"), 
-        api_key=os.getenv("AZURE_OPENAI_API_KEY"),  
-        api_version="2024-02-15-preview",
-        azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT")
-    )
-
-    # Updated system prompt for document-focused analysis
-    system_prompt = """
-    You are an AI document. Your task is to provide a strictly factual recognition of the given document image.
-    Focus solely on directly observable elements, with emphasis on:
-    1. Text content: Transcribe visible text accurately.
-    2. Recognize all the heading, title and paragraphs
-    3. Tables: Describe table structure and content concisely.
-    4. Diagrams or figures: Describe their presence, basic structure, and any labels.
-    5. Group the texts accordingly to the document.
-
-    Provide your analysis as a list of concise, factual observations. Each observation should be a separate string.
-    Your response must be in JSON format with only one key:
-    "content": [observation1, observation2, ...]
-
-    Rules:
-    - Transcribe text exactly as it appears. Use [illegible] for unreadable text.
-    - For large blocks of text, put them in one observation
-    - Describe diagrams and tables in terms of their structure and key components.
-    - Do not interpret or draw conclusions about the document's purpose or meaning.
-    - Use precise language.
-    - Aim for 5-40 observations, depending on the complexity of the document.
-    """
-
-    image_message = f"Read the text and tables in this image: ![image]({image_url})"
-
-    # Call the Azure OpenAI API
-    try:
-        base_name = os.path.basename(image_file)
-        response_ai = client.chat.completions.create(
-            model="gpt-4o",
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": image_message}
-            ],
-            max_tokens=700,  
-            temperature=0.5  
-        )
-        
-        # Parse the response from OpenAI
-        response_text = response_ai.choices[0].message.content.strip()
-        filtered_context = json.loads(response_text)
-        
-        # Convert extracted content into documents
-        documents_with_content = []
-        for item in filtered_context.get('content', []):
-            doc = Document(
-                metadata={"source": base_name, "sheet" : "", "page" : 0},
-                page_content=item
-            )
-            documents_with_content.append(doc)
-        logging.info(f"THe image documents {documents_with_content}")
-
-        return documents_with_content
-    
-    except Exception as e:
-        logging.info(f"Error processing document {image_file}: {str(e)}")
-        return []
-
 failed_files = []
 
 async def load_data(filenames):
@@ -374,8 +306,9 @@ async def load_data(filenames):
                     all_documents.extend(raw_documents)
 
                 elif file_extension in [".jpg", ".jpeg", ".png"]:                    
-                    space_url = await upload_to_space(file, file, False)
-                    raw_documents = await image_loader(file, space_url)
+                    raw_documents = AzureAIDocumentIntelligenceLoader(
+                        api_endpoint=os.getenv("IMAGE_LOADER_ENDPOINT"), api_key=os.getenv("IMAGE_LOADER_KEY"), file_path=file, mode="page",
+                    ).load()
                     all_documents.extend(raw_documents)
 
             except Exception as e:
@@ -412,6 +345,10 @@ async def load_data(filenames):
 
             if "id" not in text:
                 text.id = str(uuid.uuid4())
+            
+            # this is just for single image upload
+            if "source" not in text.metadata:
+                text.metadata["source"] = os.path.basename(filename)
 
             text.metadata["source"] = text.metadata["source"].split("/")[-1]
 
