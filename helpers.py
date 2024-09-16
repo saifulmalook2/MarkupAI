@@ -265,7 +265,15 @@ async def excel_loader(file):
     logging.info(f"Loaded documents from all sheets with row and column numbers: {len(documents_with_rows)}")
     return documents_with_rows
 
+async def add_source(documents, file):
+    
+    for doc in documents:
+        if "source" not in doc.metadata:
+            doc.metadata["source"] = file
 
+    return documents
+
+    
 failed_files = []
 
 async def load_data(filenames):
@@ -309,7 +317,7 @@ async def load_data(filenames):
                     raw_documents = AzureAIDocumentIntelligenceLoader(
                         api_endpoint=os.getenv("IMAGE_LOADER_ENDPOINT"), api_key=os.getenv("IMAGE_LOADER_KEY"), file_path=file, mode="page",
                     ).load()
-                    logging.info(f"raw {raw_documents}")
+                    raw_documents = await add_source(raw_documents, file)
                     all_documents.extend(raw_documents)
 
             except Exception as e:
@@ -346,10 +354,6 @@ async def load_data(filenames):
 
             if "id" not in text:
                 text.id = str(uuid.uuid4())
-            
-            # this is just for single image upload
-            if "source" not in text.metadata:
-                text.metadata["source"] = os.path.basename(filename)
 
             text.metadata["source"] = text.metadata["source"].split("/")[-1]
 
