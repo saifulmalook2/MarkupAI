@@ -309,6 +309,7 @@ async def load_data(filenames):
                     raw_documents = AzureAIDocumentIntelligenceLoader(
                         api_endpoint=os.getenv("IMAGE_LOADER_ENDPOINT"), api_key=os.getenv("IMAGE_LOADER_KEY"), file_path=file, mode="page",
                     ).load()
+                    logging.info(f"raw {raw_documents}")
                     all_documents.extend(raw_documents)
 
             except Exception as e:

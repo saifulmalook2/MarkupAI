@@ -38,3 +38,4 @@ python-docx
 azure-search-documents
 boto3
 python-socketio
+azure-ai-documentintelligence
