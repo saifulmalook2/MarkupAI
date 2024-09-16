@@ -266,6 +266,7 @@ async def excel_loader(file):
 
 
 async def image_loader(image_file, image_url):
+    logging.info(f"the image {image_url}")
     # Initialize Azure OpenAI client
     client = AzureOpenAI(
         azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"), 
@@ -290,14 +291,14 @@ async def image_loader(image_file, image_url):
 
     Rules:
     - Transcribe text exactly as it appears. Use [illegible] for unreadable text.
-    - For large blocks of text, summarize the content structure rather than transcribing everything.
+    - For large blocks of text, put them in one observation
     - Describe diagrams and tables in terms of their structure and key components.
     - Do not interpret or draw conclusions about the document's purpose or meaning.
     - Use precise language.
     - Aim for 5-40 observations, depending on the complexity of the document.
     """
 
-    image_message = f"Provide a strictly factual analysis of this document image: ![image]({image_url})"
+    image_message = f"Read the text and tables in this image: ![image]({image_url})"
 
     # Call the Azure OpenAI API
     try:
