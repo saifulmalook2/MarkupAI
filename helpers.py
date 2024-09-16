@@ -276,12 +276,13 @@ async def image_loader(image_file, image_url):
 
     # Updated system prompt for document-focused analysis
     system_prompt = """
-    You are an AI specialized in document analysis. Your task is to provide a strictly factual analysis of the given document image.
+    You are an AI document. Your task is to provide a strictly factual recognition of the given document image.
     Focus solely on directly observable elements, with emphasis on:
-    1. Text content: Transcribe visible text accurately, preserving formatting where possible.
-    2. Document structure: Identify headers, paragraphs, lists, footnotes, etc.
+    1. Text content: Transcribe visible text accurately.
+    2. Recognize all the heading, title and paragraphs
     3. Tables: Describe table structure and content concisely.
     4. Diagrams or figures: Describe their presence, basic structure, and any labels.
+    5. Group the texts accordingly to the document.
 
     Provide your analysis as a list of concise, factual observations. Each observation should be a separate string.
     Your response must be in JSON format with only one key:
@@ -293,7 +294,7 @@ async def image_loader(image_file, image_url):
     - Describe diagrams and tables in terms of their structure and key components.
     - Do not interpret or draw conclusions about the document's purpose or meaning.
     - Use precise language.
-    - Aim for 5-20 observations, depending on the complexity of the document.
+    - Aim for 5-40 observations, depending on the complexity of the document.
     """
 
     image_message = f"Provide a strictly factual analysis of this document image: ![image]({image_url})"
@@ -324,7 +325,7 @@ async def image_loader(image_file, image_url):
                 page_content=item
             )
             documents_with_content.append(doc)
-
+        logging.info(f"THe image documents {documents_with_content}")
 
         return documents_with_content
     
