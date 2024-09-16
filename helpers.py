@@ -311,7 +311,7 @@ async def image_loader(image_file, image_url):
                 {"role": "user", "content": image_message}
             ],
             max_tokens=700,  
-            temperature=0.1  
+            temperature=0.5  
         )
         
         # Parse the response from OpenAI
