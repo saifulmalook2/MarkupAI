@@ -10,7 +10,8 @@ from pydantic import BaseModel
 from fastapi.encoders import jsonable_encoder 
 import os        
 from helpers import generate_response, load_data, check_documents_exist
-import socketio
+import asyncio
+import aiofiles
 from cryptography.fernet import Fernet
 
 logging.basicConfig(format="%(levelname)s     %(message)s", level=logging.INFO)
@@ -54,27 +55,39 @@ async def verify_request(request: Request):
 async def root():
     return {"msg": "OK"}
 
+async def async_file_writer(file: UploadFile, file_path: str):
+    async with aiofiles.open(file_path, "wb") as buffer:
+        while content := await file.read(1024):  # Read in chunks
+            await buffer.write(content)
+
+async def process_file(file: UploadFile, upload_folder: str, evidence_id: str):
+    filename = file.filename.replace(" ", "_")
+    filename = f"{evidence_id}_{filename}"
+    file_path = os.path.join(upload_folder, filename)
+    await async_file_writer(file, file_path)
+    print(f"Saved file: {filename} at {file_path}")
+    return filename
 
 @app.post("/upload_files/{evidence_id}")
-async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, files: List[UploadFile] = File(...), headers: dict = Depends(verify_request)):
-    upload_folder = f"docs"
+async def upload_files(
+    background_tasks: BackgroundTasks,
+    evidence_id: str,
+    files: List[UploadFile] = File(...),
+    headers: dict = Depends(verify_request)
+):
+    upload_folder = "docs"
     os.makedirs(upload_folder, exist_ok=True)
 
     print("attachment id", evidence_id)
-    filenames = []
-    for _file in files:
-        filename = _file.filename.replace(" ", "_")
-        filename = f"{evidence_id}_{filename}" 
-        file_path = os.path.join(upload_folder, filename)
-        filenames.append(filename)
-        with open(file_path, "wb") as buffer:
-            buffer.write(await _file.read())
-        print(f"Saved file: {filename} at {file_path}")
-        
+
+    # Process files concurrently
+    tasks = [process_file(file, upload_folder, evidence_id) for file in files]
+    filenames = await asyncio.gather(*tasks)
+
+    # Schedule the load_data function as a background task
     background_tasks.add_task(load_data, filenames)
 
     return {"Message": "Files Added"}
-
 
 class ProjectManagmentExist(BaseModel):
     name : str

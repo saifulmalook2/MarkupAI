@@ -494,16 +494,16 @@ async def create_chain(retriever, model):
         ]
     )
 
-    retriever_prompt = ChatPromptTemplate.from_messages(
-        [
-            MessagesPlaceholder(variable_name="chat_history"),
-            ("human", "{input}"),
-            (
-                "human",
-                "Always Fetch and use the documents provided for any information and use those to formulate a response",
-            ),
-        ]
-    )
+    # retriever_prompt = ChatPromptTemplate.from_messages(
+    #     [
+    #         MessagesPlaceholder(variable_name="chat_history"),
+    #         ("human", "{input}"),
+    #         (
+    #             "human",
+    #             "Always Fetch and use the documents provided for any information and use those to formulate a response",
+    #         ),
+    #     ]
+    # )
 
     chain = create_stuff_documents_chain(llm=model, prompt=main_prompt)
 
