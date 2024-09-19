@@ -480,7 +480,7 @@ async def create_chain(retriever, model):
     Your job is to provide short but, complete answers relevant to the knowledge base provided.  
     Ensure that your responses are in full sentences and thoroughly address the query based on the documents retrieved.
     Do not provide any information that is not contained in the documents retrieved.
-    Always give summarized answers using only the content from the retrieved documents. 
+    Always give summarized answers within 200 words using only the content from the retrieved documents. 
     Greetings are allowed but Do not answer any other general queries, always stay within the scope of the documents. 
     If a query is not within the scope of the documents say 'Your question is not relevant to the evidence'
     {context}
