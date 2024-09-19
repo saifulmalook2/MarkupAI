@@ -478,7 +478,7 @@ async def check_file_format(persist_directory: str):
 async def create_chain(retriever, model):
     system_prompt = '''You are an expert Software Security Auditor. 
     Your job is to provide answers relevant to the knowledge base provided.  
-    Do not provide any information that is not contained in the documents retrieved.  
+    Do not provide any information that is not contained in the documents retrieved.
     Always give summarized answers using only the content from the retrieved documents. 
     Greetings are allowed but Do not answer any other general queries, always stay within the scope of the documents. 
     If a query is not within the scope of the documents say 'Your question is not relevant to the evidence'
@@ -507,16 +507,20 @@ async def create_chain(retriever, model):
     chain = create_stuff_documents_chain(llm=model, prompt=main_prompt)
 
     # No need to create a separate retriever here; using AzureAISearchRetriever directly
-    history_aware_retriever = create_history_aware_retriever(
-        llm=model, retriever=retriever, prompt=retriever_prompt
-    )
+    # history_aware_retriever = create_history_aware_retriever(
+    #     llm=model, retriever=retriever, prompt=retriever_prompt
+    # )
+    # retrieval_chain = create_retrieval_chain(retriever, chain)
 
-    return create_retrieval_chain(history_aware_retriever, chain)
+
+    return create_retrieval_chain(retriever, chain)
 
 
 async def process_chat(chain, question, chat_history, dir, threshold):
     # Invoke the chain with input question and chat history
-    response = chain.invoke({"input": question, "chat_history": chat_history})
+    # response = chain.invoke({"input": question, "chat_history": chat_history})
+    response = chain.invoke({"input": question})
+    
 
     answer = response['answer']
 
