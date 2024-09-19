@@ -406,7 +406,8 @@ chat_history = {}
 fallback_texts = ["Your question is not relevant to the evidence",
                   'Try phrasing your question to be more specific to the evidence',
                   'Your question is not relevant to the evidence',
-                  "Your question is not relevant to the evidence. Try phrasing your question to be more specific to the evidence."
+                  "Your question is not relevant to the evidence. Try phrasing your question to be more specific to the evidence.",
+                  "Hi", "Hello"
                   ]
 
 
@@ -583,7 +584,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
                 "Annotated_file" : None
                 }
         
-        chat_history[uid] = [[HumanMessage(content=rfe), AIMessage(content=result["answer"])]]
+        chat_history[uid].extend([HumanMessage(content=rfe), AIMessage(content=result["answer"])])
 
         source = persist_directory
         pages, page_contents = set(), {}
