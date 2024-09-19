@@ -575,6 +575,8 @@ async def generate_response(uid, persist_directory, rfe, markup):
         
         ai_answer = result["answer"].strip()
 
+        chat_history[uid]= [HumanMessage(content=rfe), AIMessage(content=result["answer"])]
+
         for text in fallback_texts:
             if text in ai_answer or text in result["answer"]:
                 return {
@@ -584,7 +586,6 @@ async def generate_response(uid, persist_directory, rfe, markup):
                 "Annotated_file" : None
                 }
         
-        chat_history[uid].extend([HumanMessage(content=rfe), AIMessage(content=result["answer"])])
 
         source = persist_directory
         pages, page_contents = set(), {}
