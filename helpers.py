@@ -288,7 +288,7 @@ async def load_data(filenames):
                 logging.info(f"Processing {file}")
                 file_extension = pathlib.Path(file).suffix
 
-                if file_extension == ".pdf":
+                if file_extension.lower() == ".pdf":
                     try:
                         raw_documents = PyPDFLoader(file, extract_images=True).load()
                     except ValueError as e:
@@ -296,24 +296,24 @@ async def load_data(filenames):
                         raw_documents = PyPDFLoader(file, extract_images=False).load()
                     all_documents.extend(raw_documents)
 
-                elif file_extension == ".xlsx":
+                elif file_extension.lower() == ".xlsx":
                     logging.info("Loading")
                     raw_documents = await excel_loader(file)
                     all_documents.extend(raw_documents)
 
-                elif file_extension == ".csv":
+                elif file_extension.lower() == ".csv":
                     raw_documents = CSVLoader(file_path=file).load()
                     all_documents.extend(raw_documents)
 
-                elif file_extension == ".docx":
+                elif file_extension.lower() == ".docx":
                     raw_documents = await docx_loader(file)
                     all_documents.extend(raw_documents)
 
-                elif file_extension == ".txt":
+                elif file_extension.lower() == ".txt":
                     raw_documents = TextLoader(file).load()
                     all_documents.extend(raw_documents)
 
-                elif file_extension in [".jpg", ".jpeg", ".png"]:                    
+                elif file_extension.lower() in [".jpg", ".jpeg", ".png"]:                    
                     raw_documents = AzureAIDocumentIntelligenceLoader(
                         api_endpoint=os.getenv("IMAGE_LOADER_ENDPOINT"), api_key=os.getenv("IMAGE_LOADER_KEY"), file_path=file, mode="page",
                     ).load()
@@ -583,7 +583,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
                 "Annotated_file" : None
                 }
         
-        chat_history[uid] = [HumanMessage(content=rfe), AIMessage(content=result["answer"])]
+        chat_history[uid] = [[HumanMessage(content=rfe), AIMessage(content=result["answer"])]]
 
         source = persist_directory
         pages, page_contents = set(), {}
