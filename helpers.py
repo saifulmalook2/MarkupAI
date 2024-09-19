@@ -480,7 +480,7 @@ async def create_chain(retriever, model):
     Your job is to provide answers relevant to the knowledge base provided.  
     Do not provide any information that is not contained in the documents retrieved.  
     Always give summarized answers using only the content from the retrieved documents. 
-    Do not give answer general queries, always stay within the scope of the documents. 
+    Greetings are allowed but Do not answer any other general queries, always stay within the scope of the documents. 
     If a query is not within the scope of the documents say 'Your question is not relevant to the evidence'
     {context}
     '''
