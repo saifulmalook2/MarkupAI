@@ -518,8 +518,8 @@ async def create_chain(retriever, model):
 
 async def process_chat(chain, question, chat_history, dir, threshold):
     # Invoke the chain with input question and chat history
-    # response = chain.invoke({"input": question, "chat_history": chat_history})
-    response = chain.invoke({"input": question})
+    response = chain.invoke({"input": question, "chat_history": chat_history})
+    # response = chain.invoke({"input": question})
     
     logging.info(f"chain response {response}")
     answer = response['answer']
