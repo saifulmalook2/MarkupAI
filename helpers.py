@@ -407,7 +407,7 @@ fallback_texts = ["Your question is not relevant to the evidence",
                   'Try phrasing your question to be more specific to the evidence',
                   'Your question is not relevant to the evidence',
                   "Your question is not relevant to the evidence. Try phrasing your question to be more specific to the evidence.",
-                  "Hi", "Hello"
+                  "Hi", "Hello", "provided documents do not contain", "provided documents do not include"
                   ]
 
 
@@ -476,7 +476,14 @@ async def check_file_format(persist_directory: str):
 
 
 async def create_chain(retriever, model):
-    system_prompt = "You are an expert Software Security Auditor. Your job is to provide answers relevant to the knowledge base provided.  Do not provide any information that is not contained in the documents retrieved.  Always give summarized answers using only the content from the retrieved documents. Do not give answer general queries, always stay within the scope of the documents. {context}"
+    system_prompt = '''You are an expert Software Security Auditor. 
+    Your job is to provide answers relevant to the knowledge base provided.  
+    Do not provide any information that is not contained in the documents retrieved.  
+    Always give summarized answers using only the content from the retrieved documents. 
+    Do not give answer general queries, always stay within the scope of the documents. 
+    If a query is not within the scope of the documents say 'Your question is not relevant to the evidence'
+    {context}
+    '''
     
     main_prompt = ChatPromptTemplate.from_messages(
         [
