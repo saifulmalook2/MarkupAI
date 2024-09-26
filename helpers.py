@@ -34,6 +34,10 @@ from pathlib import Path
 from openai import AzureOpenAI
 import base64
 import logging
+from fastapi.concurrency import run_in_threadpool
+from aiohttp import ClientSession
+import asyncio
+
 
 logging.basicConfig(format="%(levelname)s     %(message)s", level=logging.INFO)
 httpx_logger = logging.getLogger("httpx")
@@ -266,7 +270,6 @@ async def excel_loader(file):
     return documents_with_rows
 
 async def add_source(documents, file):
-    
     for doc in documents:
         if "source" not in doc.metadata:
             doc.metadata["source"] = file
@@ -281,100 +284,104 @@ async def load_data(filenames):
     try:
         all_documents = []
 
+        # File path where the docs are stored
         files = os.path.join(os.getcwd(), "docs")
+
+        # Process each file in a thread pool (for CPU-bound tasks)
         for filename in filenames:
-            try:
-                file = os.path.abspath(os.path.join(str(files), str(filename)))
-                logging.info(f"Processing {file}")
-                file_extension = pathlib.Path(file).suffix
+            file = os.path.abspath(os.path.join(files, filename))
+            logging.info(f"Processing {file}")
+            await run_in_threadpool(process_file, file, all_documents)
 
-                if file_extension.lower() == ".pdf":
-                    try:
-                        raw_documents = PyPDFLoader(file, extract_images=True).load()
-                    except ValueError as e:
-                        logging.info(f"Failed to extract images from {file}: {e}")
-                        raw_documents = PyPDFLoader(file, extract_images=False).load()
-                    all_documents.extend(raw_documents)
-
-                elif file_extension.lower() == ".xlsx":
-                    logging.info("Loading")
-                    raw_documents = await excel_loader(file)
-                    all_documents.extend(raw_documents)
-
-                elif file_extension.lower() == ".csv":
-                    raw_documents = CSVLoader(file_path=file).load()
-                    all_documents.extend(raw_documents)
-
-                elif file_extension.lower() == ".docx":
-                    raw_documents = await docx_loader(file)
-                    all_documents.extend(raw_documents)
-
-                elif file_extension.lower() == ".txt":
-                    raw_documents = TextLoader(file).load()
-                    all_documents.extend(raw_documents)
-
-                elif file_extension.lower() in [".jpg", ".jpeg", ".png"]:                    
-                    raw_documents = AzureAIDocumentIntelligenceLoader(
-                        api_endpoint=os.getenv("IMAGE_LOADER_ENDPOINT"), api_key=os.getenv("IMAGE_LOADER_KEY"), file_path=file, mode="page",
-                    ).load()
-                    raw_documents = await add_source(raw_documents, file)
-                    all_documents.extend(raw_documents)
-
-            except Exception as e:
-                logging.info(f"Failed to process {filename}: {e}")
-                failed_files.append(os.path.basename(filename))
-                return 
-
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=300, chunk_overlap=50
-        )
+        # Split documents using your async capable text splitter
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=50)
         texts = text_splitter.split_documents(all_documents)
 
-        logging.info("split")
+        # Async embedding and vector store operations
+        logging.info("Fetching embeddings")
         embedding = AzureOpenAIEmbeddings(
             model="text-embedding-ada-002",
             azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS"),
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT_EMBEDDINGS"),
             api_key=os.getenv("AZURE_OPENAI_API_KEY_EMBEDDINGS"),
-        )  
+        )
 
-        logging.info("embeddings fetched")
+        logging.info("Uploading documents to vector DB")
         vectordb = AzureSearch(
-                azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
-                azure_search_key=os.getenv("AZURE_SEARCH_KEY"),
-                index_name="soc-index",  # Replace with your index name
-                embedding_function=embedding.embed_query,
-            )
-        
-        logging.info("db fetched")
+            azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
+            azure_search_key=os.getenv("AZURE_SEARCH_KEY"),
+            index_name="soc-index",  # Replace with your index name
+            embedding_function=embedding.embed_query,
+        )
 
-        logging.info("embeddings created")
-
+        # Add metadata to the documents and upload them to vector DB
         for text in texts:
-
             if "id" not in text:
                 text.id = str(uuid.uuid4())
-
             text.metadata["source"] = text.metadata["source"].split("/")[-1]
-
-
             if "row" in text.metadata:
                 text.metadata["page"] = text.metadata['row']
                 del text.metadata["row"]
-
             if "sheet" not in text.metadata:
                 text.metadata["sheet"] = ""
 
-        logging.info(texts[0])
         await vectordb.aadd_documents(documents=texts)
 
         logging.info("Files Added")
-
         return filenames
 
     except Exception as e:
-        logging.info(f"Error in load_data: {e}")
+        logging.error(f"Error in load_data: {e}")
         return False
+
+
+# Function to handle file processing (runs in a separate thread)
+def process_file(file, all_documents):
+    file_extension = pathlib.Path(file).suffix
+
+    # Depending on file type, handle parsing (can include CPU-bound operations)
+    if file_extension.lower() == ".pdf":
+        try:
+            raw_documents = PyPDFLoader(file, extract_images=True).load()
+        except ValueError as e:
+            logging.info(f"Failed to extract images from {file}: {e}")
+            raw_documents = PyPDFLoader(file, extract_images=False).load()
+        all_documents.extend(raw_documents)
+
+    elif file_extension.lower() == ".xlsx":
+        raw_documents = asyncio.run(excel_loader(file))  # Handle async inside sync context
+        all_documents.extend(raw_documents)
+
+    elif file_extension.lower() == ".csv":
+        raw_documents = CSVLoader(file_path=file).load()
+        all_documents.extend(raw_documents)
+
+    elif file_extension.lower() == ".docx":
+        raw_documents = asyncio.run(docx_loader(file))  # Handle async inside sync context
+        all_documents.extend(raw_documents)
+
+    elif file_extension.lower() == ".txt":
+        raw_documents = TextLoader(file).load()
+        all_documents.extend(raw_documents)
+
+    elif file_extension.lower() in [".jpg", ".jpeg", ".png"]:
+        raw_documents = asyncio.run(image_loader(file))  # Handle async inside sync context
+        all_documents.extend(raw_documents)
+
+
+# Async function for image processing
+async def image_loader(file):
+    # Async function for loading image data using external API (Azure API in your case)
+    api_endpoint = os.getenv("IMAGE_LOADER_ENDPOINT")
+    api_key = os.getenv("IMAGE_LOADER_KEY")
+
+    async with ClientSession() as session:
+        headers = {"Authorization": f"Bearer {api_key}"}
+        async with session.post(api_endpoint, data={'file': file}, headers=headers) as response:
+            result = await response.json()
+            # Process and return the result
+            return await add_source(result, file)
+
 
 
 async def check_documents_exist(source):
@@ -464,10 +471,10 @@ async def clean_content(response, source):
 async def check_file_format(persist_directory: str):
     # Mapping of file extensions to output values
     file_format_output = {
-        ".pdf": (5, 7),
-        ".csv": (5, 7),
-        ".docx": (5, 7),
-        ".xlsx": (5, 7)
+        ".pdf": (5, 10),
+        ".csv": (5, 10),
+        ".docx": (5, 10),
+        ".xlsx": (5, 10)
     }
 
     # Extract the file extension and return the corresponding value

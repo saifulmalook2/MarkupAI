@@ -10,7 +10,8 @@ from pydantic import BaseModel
 from fastapi.encoders import jsonable_encoder 
 import os        
 from helpers import generate_response, load_data, check_documents_exist
-import socketio
+from concurrent.futures import ThreadPoolExecutor
+import aiofiles
 from cryptography.fernet import Fernet
 
 logging.basicConfig(format="%(levelname)s     %(message)s", level=logging.INFO)
@@ -24,6 +25,7 @@ cipher_suite = Fernet(KEY)
 
 
 app = FastAPI()
+executor = ThreadPoolExecutor()
 
 
 async def verify_request(request: Request):
@@ -57,21 +59,20 @@ async def root():
 
 @app.post("/upload_files/{evidence_id}")
 async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, files: List[UploadFile] = File(...), headers: dict = Depends(verify_request)):
-    upload_folder = f"docs"
+    upload_folder = "docs"
     os.makedirs(upload_folder, exist_ok=True)
 
-    print("attachment id", evidence_id)
     filenames = []
     for _file in files:
-        filename = _file.filename.replace(" ", "_")
-        filename = f"{evidence_id}_{filename}" 
+        filename = f"{evidence_id}_{_file.filename.replace(' ', '_')}"
         file_path = os.path.join(upload_folder, filename)
+        async with aiofiles.open(file_path, "wb") as buffer:
+            await buffer.write(await _file.read())
         filenames.append(filename)
-        with open(file_path, "wb") as buffer:
-            buffer.write(await _file.read())
-        print(f"Saved file: {filename} at {file_path}")
-        
-    background_tasks.add_task(load_data, filenames)
+
+    # Add the load_data task to the background using the thread pool
+    background_tasks.add_task(executor.submit, load_data, filenames)
+
 
     return {"Message": "Files Added"}
 
