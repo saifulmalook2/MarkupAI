@@ -56,6 +56,9 @@ async def verify_request(request: Request):
 async def root():
     return {"msg": "OK"}
 
+async def run_load_data(filenames):
+    await load_data(filenames)
+
 
 @app.post("/upload_files/{evidence_id}")
 async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, files: List[UploadFile] = File(...), headers: dict = Depends(verify_request)):
@@ -70,9 +73,8 @@ async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, file
             await buffer.write(await _file.read())
         filenames.append(filename)
 
-    # Add the load_data task to the background using the thread pool
-    background_tasks.add_task(executor.submit, load_data, filenames)
-
+    # Schedule the load_data task asynchronously in the background
+    background_tasks.add_task(run_load_data, filenames)
 
     return {"Message": "Files Added"}
 
