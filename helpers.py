@@ -37,6 +37,7 @@ import logging
 from fastapi.concurrency import run_in_threadpool
 from aiohttp import ClientSession
 import asyncio
+from get_index import create_or_get_index
 
 
 logging.basicConfig(format="%(levelname)s     %(message)s", level=logging.INFO)
@@ -279,7 +280,7 @@ async def add_source(documents, file):
     
 failed_files = []
 
-async def load_data(filenames):
+async def load_data(filenames, evidence_id):
     logging.info("Background task initiated")
     try:
         all_documents = []
@@ -307,12 +308,7 @@ async def load_data(filenames):
         )
 
         logging.info("Uploading documents to vector DB")
-        vectordb = AzureSearch(
-            azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
-            azure_search_key=os.getenv("AZURE_SEARCH_KEY"),
-            index_name="client12345-index",  # Replace with your index name
-            embedding_function=embedding.embed_query,
-        )
+        vectordb = create_or_get_index(client_id=evidence_id)
 
         # Add metadata to the documents and upload them to vector DB
         for text in texts:
@@ -384,7 +380,7 @@ async def image_loader(file):
 
 
 
-async def check_documents_exist(source):
+async def check_documents_exist(source, evidence_id):
     source = source.replace(" ", "_")
 
     if source in failed_files:
@@ -393,7 +389,7 @@ async def check_documents_exist(source):
     retriever = AzureAISearchRetriever(
         api_key=os.getenv("AZURE_SEARCH_KEY"),
         service_name="azure-vector-db",
-        index_name="client12345-index",
+        index_name=f"{evidence_id}-index",
         top_k=1,
         filter=f"metadata/source eq '{source}'"
     )
@@ -554,7 +550,7 @@ async def process_chat(chain, question, chat_history, dir, threshold):
     return final_response
 
 
-async def generate_response(uid, persist_directory, rfe, markup):
+async def generate_response(uid, persist_directory, rfe, markup, evidence_id):
 
     persist_directory = persist_directory.replace(" ", "_")
     
@@ -566,7 +562,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
         retriever = AzureAISearchRetriever(
             api_key=os.getenv("AZURE_SEARCH_KEY"),
             service_name="azure-vector-db",
-            index_name="client12345-index",
+            index_name=f"{evidence_id}-index",
             top_k=k,  # Number of documents to retrieve
             filter=f"metadata/source eq '{persist_directory}'"
         )

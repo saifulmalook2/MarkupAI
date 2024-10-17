@@ -56,8 +56,8 @@ async def verify_request(request: Request):
 async def root():
     return {"msg": "OK"}
 
-async def run_load_data(filenames):
-    await load_data(filenames)
+async def run_load_data(filenames, evidence_id):
+    await load_data(filenames, evidence_id)
 
 
 @app.post("/upload_files/{evidence_id}")
@@ -74,7 +74,7 @@ async def upload_files(background_tasks: BackgroundTasks, evidence_id: str, file
         filenames.append(filename)
 
     # Schedule the load_data task asynchronously in the background
-    background_tasks.add_task(run_load_data, filenames)
+    background_tasks.add_task(run_load_data, filenames, evidence_id)
 
     return {"Message": "Files Added"}
 
@@ -92,7 +92,7 @@ async def document_exist(evidence_id:str, data: ProjectManagmentExist, headers: 
 
     print("file name", file_name)
 
-    response, msg = await check_documents_exist(file_name)
+    response, msg = await check_documents_exist(file_name, evidence_id)
 
     logging.info(f"response {response} {msg}")
     return {"status" : response, "msg" : msg}
@@ -119,5 +119,5 @@ async def project_management_upload(evidence_id:str, data: ProjectManagmentUploa
     print("file name", file_name)
 
     user_id = f"{uid}-{evidence_id}"
-    response = await generate_response(user_id, file_name, rfe, markup)
+    response = await generate_response(user_id, file_name, rfe, markup, evidence_id)
     return response
