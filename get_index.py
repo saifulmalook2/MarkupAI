@@ -101,7 +101,7 @@ def create_or_get_index(client_id, azure_openai_embedding_dimensions=1536):
         # Create or update the index
         result = index_client.create_or_update_index(index)
         print(f"Index '{result.name}' created successfully")
-        return result
+        # return result
 
 # Example Usage
 

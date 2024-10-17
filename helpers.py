@@ -308,7 +308,15 @@ async def load_data(filenames, evidence_id):
         )
 
         logging.info("Uploading documents to vector DB")
-        vectordb = create_or_get_index(client_id=evidence_id)
+
+        create_or_get_index(evidence_id)
+        
+        vectordb = AzureSearch(
+            azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
+            azure_search_key=os.getenv("AZURE_SEARCH_KEY"),
+            index_name=f"{evidence_id}-index",  # Replace with your index name
+            embedding_function=embedding.embed_query,
+        )
 
         # Add metadata to the documents and upload them to vector DB
         for text in texts:
