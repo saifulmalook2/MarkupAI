@@ -31,7 +31,7 @@ from vector_db import AzureSearch
 import boto3
 import shutil
 from pathlib import Path
-from openai import AzureOpenAI
+from openai import AsyncAzureOpenAI
 import base64
 import logging
 from fastapi.concurrency import run_in_threadpool
@@ -424,7 +424,7 @@ fallback_texts = ["Your question is not relevant to the evidence",
 
 async def clean_content(response, source):
     
-    client = AzureOpenAI(
+    client = AsyncAzureOpenAI(
         azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT"), 
         api_key=os.getenv("AZURE_OPENAI_API_KEY"),  
         api_version="2024-02-15-preview",
@@ -449,7 +449,7 @@ async def clean_content(response, source):
     system_prompt = system_prompt.format(user_question=user_question, source=source, answer=response['answer'])
     context_message = f"Here is the context to filter:\n{response['context']}"
     try:
-        response_ai = client.chat.completions.create(
+        response_ai = await client.chat.completions.create(
             model="gpt-4o", 
             response_format={"type": "json_object"},
             # temperature=0.3,
