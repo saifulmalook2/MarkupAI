@@ -310,7 +310,7 @@ async def load_data(filenames):
         vectordb = AzureSearch(
             azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
             azure_search_key=os.getenv("AZURE_SEARCH_KEY"),
-            index_name="soc-index",  # Replace with your index name
+            index_name="client12345-index",  # Replace with your index name
             embedding_function=embedding.embed_query,
         )
 
@@ -393,7 +393,7 @@ async def check_documents_exist(source):
     retriever = AzureAISearchRetriever(
         api_key=os.getenv("AZURE_SEARCH_KEY"),
         service_name="azure-vector-db",
-        index_name="soc-index",
+        index_name="client12345-index",
         top_k=1,
         filter=f"metadata/source eq '{source}'"
     )
@@ -566,7 +566,7 @@ async def generate_response(uid, persist_directory, rfe, markup):
         retriever = AzureAISearchRetriever(
             api_key=os.getenv("AZURE_SEARCH_KEY"),
             service_name="azure-vector-db",
-            index_name="soc-index",
+            index_name="client12345-index",
             top_k=k,  # Number of documents to retrieve
             filter=f"metadata/source eq '{persist_directory}'"
         )
