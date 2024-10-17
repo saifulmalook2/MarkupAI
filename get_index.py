@@ -20,7 +20,13 @@ from azure.core.credentials import AzureKeyCredential
 from azure.core.exceptions import ResourceNotFoundError
 from azure.core.credentials import AzureKeyCredential
 import os
+import logging
 
+logging.basicConfig(format="%(levelname)s     %(message)s", level=logging.INFO)
+httpx_logger = logging.getLogger("httpx")
+httpx_logger.setLevel(logging.WARNING)
+logging.getLogger("uvicorn").setLevel(logging.WARNING)  # Set uvicorn to warning level
+logging.getLogger("azure.core.pipeline.policies").setLevel(logging.WARNING)
 
 # Function to create or retrieve an index based on client_id
 def create_or_get_index(client_id, azure_openai_embedding_dimensions=1536):
@@ -33,11 +39,11 @@ def create_or_get_index(client_id, azure_openai_embedding_dimensions=1536):
     try:
         # Check if the index exists
         index = index_client.get_index(index_name)
-        print(f"Index '{index_name}' already exists")
+        logging.info(f"Index '{index_name}' already exists")
         return index  # Return the existing index
     except ResourceNotFoundError:
         # If the index does not exist, create it
-        print(f"Index '{index_name}' does not exist. Creating a new index.")
+        logging.info(f"Index '{index_name}' does not exist. Creating a new index.")
 
         # Define the fields for the search index (based on the screenshot you provided)
         fields = [
@@ -100,11 +106,6 @@ def create_or_get_index(client_id, azure_openai_embedding_dimensions=1536):
         
         # Create or update the index
         result = index_client.create_or_update_index(index)
-        print(f"Index '{result.name}' created successfully")
+        logging.info(f"Index '{result.name}' created successfully")
         # return result
 
-# Example Usage
-
-
-client_id = "testing"
-create_or_get_index(client_id)
