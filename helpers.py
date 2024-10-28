@@ -309,12 +309,18 @@ async def load_data(filenames, evidence_id):
 
         logging.info("Uploading documents to vector DB")
 
-        create_or_get_index(evidence_id)
+        # create_or_get_index(evidence_id)
         
+        # vectordb = AzureSearch(
+        #     azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
+        #     azure_search_key=os.getenv("AZURE_SEARCH_KEY"),
+        #     index_name=f"{evidence_id}-index",  # Replace with your index name
+        #     embedding_function=embedding.embed_query,
+        # )
         vectordb = AzureSearch(
             azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
             azure_search_key=os.getenv("AZURE_SEARCH_KEY"),
-            index_name=f"{evidence_id}-index",  # Replace with your index name
+            index_name=f"soc-index",  # Replace with your index name
             embedding_function=embedding.embed_query,
         )
 
@@ -394,14 +400,21 @@ async def check_documents_exist(source, evidence_id):
     if source in failed_files:
         return False, "Failed Processing"
     
+    # retriever = AzureAISearchRetriever(
+    #     api_key=os.getenv("AZURE_SEARCH_KEY"),
+    #     service_name="azure-vector-db",
+    #     index_name=f"{evidence_id}-index",
+    #     top_k=1,
+    #     filter=f"metadata/source eq '{source}'"
+    # )
+
     retriever = AzureAISearchRetriever(
         api_key=os.getenv("AZURE_SEARCH_KEY"),
         service_name="azure-vector-db",
-        index_name=f"{evidence_id}-index",
+        index_name=f"soc-index",
         top_k=1,
         filter=f"metadata/source eq '{source}'"
     )
-
     documents = retriever.invoke("")
     if len(documents) > 0:
         doc_source = documents[0].metadata['metadata']['source']
@@ -567,10 +580,17 @@ async def generate_response(uid, persist_directory, rfe, markup, evidence_id):
     threshold, k = await check_file_format(persist_directory)
 
     try:
+        # retriever = AzureAISearchRetriever(
+        #     api_key=os.getenv("AZURE_SEARCH_KEY"),
+        #     service_name="azure-vector-db",
+        #     index_name=f"{evidence_id}-index",
+        #     top_k=k,  # Number of documents to retrieve
+        #     filter=f"metadata/source eq '{persist_directory}'"
+        # )
         retriever = AzureAISearchRetriever(
             api_key=os.getenv("AZURE_SEARCH_KEY"),
             service_name="azure-vector-db",
-            index_name=f"{evidence_id}-index",
+            index_name=f"soc-index",
             top_k=k,  # Number of documents to retrieve
             filter=f"metadata/source eq '{persist_directory}'"
         )
