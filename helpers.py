@@ -374,29 +374,31 @@ def process_file(file, all_documents):
         raw_documents = TextLoader(file).load()
         all_documents.extend(raw_documents)
 
-    elif file_extension.lower() in [".jpg", ".jpeg", ".png"]:
-        logging.info(f"processing image")
+    elif file_extension.lower() in [".jpg", ".jpeg", ".png"]:                    
+        raw_documents = AzureAIDocumentIntelligenceLoader(
+            api_endpoint=os.getenv("IMAGE_LOADER_ENDPOINT"), api_key=os.getenv("IMAGE_LOADER_KEY"), file_path=file, mode="page",
+        ).load()
+        logging.info(f"raw 1{raw_documents}")
 
-        raw_documents = asyncio.run(image_loader(file))  # Handle async inside sync context
-        logging.info(f"rawww {raw_documents}")
+        raw_documents =  add_source(raw_documents, file)
+        logging.info(f"raw 2{raw_documents}")
         all_documents.extend(raw_documents)
 
-
-# Async function for image processing
-async def image_loader(file):
-    # Async function for loading image data using external API (Azure API in your case)
-    api_endpoint = os.getenv("IMAGE_LOADER_ENDPOINT")
-    api_key = os.getenv("IMAGE_LOADER_KEY")
-    try:
-        async with ClientSession() as session:
-            headers = {"Authorization": f"Bearer {api_key}"}
-            async with session.post(api_endpoint, data={'file': file}, headers=headers) as response:
-                result = await response.json()
-                # Process and return the result
-                return await add_source(result, file)
-    except Exception as e:
-        logging.info(f"error {e}")
-        return 
+# # Async function for image processing
+# async def image_loader(file):
+#     # Async function for loading image data using external API (Azure API in your case)
+#     api_endpoint = os.getenv("IMAGE_LOADER_ENDPOINT")
+#     api_key = os.getenv("IMAGE_LOADER_KEY")
+#     try:
+#         async with ClientSession() as session:
+#             headers = {"Authorization": f"Bearer {api_key}"}
+#             async with session.post(api_endpoint, data={'file': file}, headers=headers) as response:
+#                 result = await response.json()
+#                 # Process and return the result
+#                 return await add_source(result, file)
+#     except Exception as e:
+#         logging.info(f"error {e}")
+#         return 
 
 
 
