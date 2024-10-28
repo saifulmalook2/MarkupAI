@@ -270,7 +270,7 @@ async def excel_loader(file):
     logging.info(f"Loaded documents from all sheets with row and column numbers: {len(documents_with_rows)}")
     return documents_with_rows
 
-async def add_source(documents, file):
+def add_source(documents, file):
     for doc in documents:
         if "source" not in doc.metadata:
             doc.metadata["source"] = file
