@@ -376,6 +376,7 @@ def process_file(file, all_documents):
 
     elif file_extension.lower() in [".jpg", ".jpeg", ".png"]:
         raw_documents = asyncio.run(image_loader(file))  # Handle async inside sync context
+        logging.info(f"rawww {raw_documents}")
         all_documents.extend(raw_documents)
 
 
