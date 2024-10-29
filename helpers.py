@@ -497,10 +497,10 @@ async def clean_content(response, source):
 async def check_file_format(persist_directory: str):
     # Mapping of file extensions to output values
     file_format_output = {
-        ".pdf": (5, 10),
-        ".csv": (5, 10),
-        ".docx": (5, 10),
-        ".xlsx": (5, 10)
+        ".pdf": (2, 10),
+        ".csv": (2, 10),
+        ".docx": (2, 10),
+        ".xlsx": (2, 10)
     }
 
     # Extract the file extension and return the corresponding value
@@ -553,6 +553,7 @@ async def create_chain(retriever, model):
 async def process_chat(chain, question, chat_history, dir, threshold):
     # Invoke the chain with input question and chat history
     response = chain.invoke({"input": question, "chat_history": []})
+
     # response = chain.invoke({"input": question})
     
     answer = response['answer']
