@@ -457,7 +457,6 @@ async def clean_content(response, source):
         Your task is to filter irrelevant content based on the provided question or answer:
         Question & Answer: {user_question}.
         Please return only the contexts that are relevant to this question or answer.
-        Do not Remove content that is relevant to the question.
 
         
         If the Question or Answer is a general talk, such as greetings, small talk (e.g., "hi", "hello", "how are you", "what's the weather", "how's it going", etc.), 
