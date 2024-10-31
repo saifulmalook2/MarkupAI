@@ -670,6 +670,8 @@ async def generate_response(uid, persist_directory, rfe, markup, evidence_id):
 
             pages.add(page)
         
+
+        logging.info(f"page content {page_contents}")
         space_url = ""
 
         if markup and markup_check:
