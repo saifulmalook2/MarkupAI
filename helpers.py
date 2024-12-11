@@ -70,48 +70,34 @@ async def upload_to_space(origin, output,remove, region_name='nyc3'):
 
 
 async def highlight_text_in_pdf(input_path, output_path, page_contents):
-    doc = fitz.open(input_path)
-    anotated_rects = []
-    anotated_texts = []
-
-    def get_line_rect(page, text_instance):
-        block = page.get_text("dict")['blocks']
-        for b in block:
-            if b['type'] == 0:
-                for line in b['lines']:
-                    for span in line['spans']:
-                        if (span['bbox'][0] <= text_instance.x0 <= span['bbox'][2] and
-                            span['bbox'][1] <= text_instance.y0 <= span['bbox'][3]):
-                            return fitz.Rect(span['bbox'][0], line['bbox'][1], span['bbox'][2], line['bbox'][3])
-        return None
-
     try:
+        # Open the PDF document
+        pdf_document = fitz.open(input_path)
+
+        # Iterate through specified pages and texts
         for page_num, text_list in page_contents.items():
-            if page_num >= len(doc) + 1 or page_num < 0:
+            if page_num > len(pdf_document) or page_num <= 0:
                 logging.info(f"Page number {page_num} is out of range.")
                 continue
 
-            page = doc[page_num - 1]
-            for l in text_list:
-                if l.strip():
-                    text_instances = page.search_for(l)
-                    if text_instances:
-                        for inst in text_instances:
-                            if (
-                                inst not in anotated_rects
-                            ):
-                                line_rect = get_line_rect(page, inst)
-                                if line_rect:
-                                    annot = page.add_highlight_annot(line_rect)
-                                    annot.update()
-                                    anotated_rects.append(line_rect)
-                                    anotated_texts.append(l)
+            page = pdf_document[page_num - 1]  # Convert 1-based to 0-based index
 
-        doc.save(output_path)
-        doc.close()
-        
+            for fragment in text_list:
+                if fragment.strip():  # Skip empty strings
+                    matches = page.search_for(fragment)
+                    for match in matches:
+                        try:
+                            highlight = page.add_highlight_annot(match)
+                            highlight.update()
+                        except Exception as e:
+                            logging.error(f"Error highlighting text '{fragment}' on page {page_num}: {e}")
+
+        # Save the modified PDF
+        pdf_document.save(output_path, garbage=4, deflate=True)
+        pdf_document.close()
+
     except Exception as e:
-        logging.info("Error while marking PDF", e)
+        logging.error("Error while processing the PDF", exc_info=e)
 
 
 async def highlight_text_in_xlsx(input_path, output_path, page_contents):
